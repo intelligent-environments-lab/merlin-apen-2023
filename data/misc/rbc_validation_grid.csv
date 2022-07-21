@@ -1,0 +1,4 @@
+type,simulation_id
+agent.SelfConsumptionFontanaRBC,rbc_validation_0
+agent.TOUPeakReductionFontanaRBC,rbc_validation_1
+agent.TOURateOptimizationFontanaRBC,rbc_validation_2

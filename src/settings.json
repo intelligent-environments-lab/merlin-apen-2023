@@ -1,0 +1,66 @@
+{ 
+    "max_workers": 5,
+    "schema_filepath": "/Users/kingsleyenweye/Desktop/INTELLIGENT_ENVIRONMENT_LAB/epri_data/data/citylearn_challenge_2022_phase_3/schema.json",
+    "train_episodes": 10,
+    "seed": 0,
+    "train_building_count": 5,
+    "train_start_time_step": 0,
+    "train_end_time_step": 3671,
+    "test_start_time_step": 3672,
+    "test_end_time_step": 8759,
+    "reward_design": {
+        "building_count": 3,
+        "grid": {
+            "type": ["reward.AdditiveReward", "reward.MultiplicativeReward"],
+            "exponent": [1, 2],
+            "weight": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        }
+    },
+    "design_buildings": [1, 13, 14],
+    "hyperparameter_design": {
+        "building_count": 2,
+        "grid": {
+            "discount": [0.90, 0.95, 0.99],
+            "tau": [0.0005, 0.005, 0.05],
+            "lr": [0.0005, 0.005, 0.05]
+        },
+        "reward": {
+            "type": "reward.AdditiveReward",
+            "attributes": {
+                "carbon_emission_exponent": 1.0,
+                "electricity_price_exponent": 1.0,
+                "carbon_emission_weight": 1.0,
+                "electricity_price_weight": 0.0
+            }
+        }
+    },
+    "rbc_validation": {
+        "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"],
+        "attributes": {
+            "capacity": 6.4,
+            "hour_index": 2,
+            "soc_index": 22,
+            "net_electricity_consumption_index": 23
+        }
+    },
+    "default_agent": {
+        "type": "citylearn.agents.sac.SAC",
+        "attributes": {
+            "hidden_dimension": [
+                256,
+                256
+            ],
+            "discount": 0.9,
+            "tau": 0.005,
+            "lr": 0.005,
+            "batch_size": 256,
+            "replay_buffer_capacity": 100000.0,
+            "start_training_time_step": 3000,
+            "end_exploration_time_step": 3000,
+            "deterministic_start_time_step": null,
+            "action_scaling_coef": 1.0,
+            "reward_scaling": 1.0,
+            "update_per_time_step": 2
+        }
+    }
+}
