@@ -5,7 +5,6 @@ import itertools
 import os
 from multiprocessing import cpu_count
 from pathlib import Path
-import random
 import shlex
 import subprocess
 import sys
@@ -56,11 +55,12 @@ def set_hyperparameter_design_work_order():
 
     # hyperparameter definition
     hyperparameter_grid = settings['hyperparameter_design']['grid']
+    hyperparameter_grid['seed'] = settings['seeds']
     param_names = list(hyperparameter_grid.keys())
     param_values = list(hyperparameter_grid.values())
     param_values_grid = list(itertools.product(*param_values))
     grid = pd.DataFrame(param_values_grid,columns=param_names)
-    # grid = grid.sort_values(['weight','exponent'])
+    grid = grid.sort_values(['seed'])
     grid['buildings'] = str(train_buildings)
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'hyperparameter_design_{x}')
     grid.to_csv(os.path.join(misc_directory,'hyperparameter_design_grid.csv'),index=False)
@@ -107,6 +107,11 @@ def set_rbc_validation_work_order():
         schema['agent'] = {
             'type': params['type'],
             'attributes': settings['rbc_validation']['attributes']
+            **{
+                'hour_index':settings['observations'].index('hour'),
+                'soc_index':settings['observations'].index('electrical_storage_soc'),
+                'net_electricity_consumption_index':settings['observations'].index('net_electricity_consumption')
+            }
         }
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
@@ -137,16 +142,13 @@ def set_reward_design_work_order():
 
     # reward definition
     reward_design_grid = settings['reward_design']['grid']
+    reward_design_grid['seed'] = settings['seeds']
     param_names = list(reward_design_grid.keys())
     param_values = list(reward_design_grid.values())
     param_values_grid = list(itertools.product(*param_values))
     grid = pd.DataFrame(param_values_grid,columns=param_names)
-    grid = grid.sort_values(['weight','exponent'])
+    grid = grid.sort_values(['seed','weight','exponent'])
     grid['buildings'] = str(train_buildings)
-    grid = grid[
-        ((grid['type']=='reward.MultiplicativeReward') & (grid['weight']!=0))
-        |(grid['type']!='reward.MultiplicativeReward')
-    ].copy()
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'reward_function_{x}')
     grid.to_csv(os.path.join(misc_directory,'reward_design_grid.csv'),index=False)
 
@@ -163,6 +165,7 @@ def set_reward_design_work_order():
                 'carbon_emission_exponent': float(params['exponent']),
             }  
         }
+        schema['agent']['attributes']['seed'] = params['seed']
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
         work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
@@ -189,12 +192,15 @@ def preliminary_setup():
 
     # general simulation settings
     settings = get_settings()
-    random.seed(settings['seed'])
     schema = read_json(settings['schema_filepath'])
     schema['simulation_start_time_step'] = settings["train_start_time_step"]
     schema['simulation_end_time_step'] = settings["train_end_time_step"]
     schema['episodes'] = settings["train_episodes"]
     schema['root_directory'] = os.path.join(*Path(settings['schema_filepath']).parts[0:-1])
+
+    # set active observations
+    for o in schema['observations']:
+        schema['observations'][o]['active'] = True if o in settings['observations'] else False
 
     # define agent
     schema['agent'] = settings['default_agent']
