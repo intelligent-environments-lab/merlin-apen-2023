@@ -215,7 +215,7 @@ def get_tacc_job(experiment):
         'source /work/07083/ken658/projects/citylearn/buildsys_2022/env/bin/activate',
         '',
         '# set launcher environment variables',
-        'export LAUNCHER_WORKDIR="/work/07083/ken658/projects/citylearn/buildsys_2022/data/work_order"',
+        'export LAUNCHER_DIR="/work/07083/ken658/projects/citylearn/buildsys_2022/data/work_order"',
         f'export LAUNCHER_JOB_FILE="{experiment}.sh"',
         '',
         '${LAUNCHER_DIR}/paramrun',
