@@ -49,8 +49,8 @@
             "attributes": {
                 "carbon_emission_exponent": 1.0,
                 "electricity_price_exponent": 1.0,
-                "carbon_emission_weight": 1.0,
-                "electricity_price_weight": 0.0
+                "carbon_emission_weight": 0.5,
+                "electricity_price_weight": 0.5
             }
         }
     },
