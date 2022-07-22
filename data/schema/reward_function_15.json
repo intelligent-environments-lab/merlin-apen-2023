@@ -27,47 +27,47 @@
       "shared_in_central_agent": true
     },
     "outdoor_dry_bulb_temperature_predicted_6h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "outdoor_dry_bulb_temperature_predicted_12h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "outdoor_dry_bulb_temperature_predicted_24h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "outdoor_relative_humidity": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "outdoor_relative_humidity_predicted_6h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "outdoor_relative_humidity_predicted_12h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "outdoor_relative_humidity_predicted_24h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "diffuse_solar_irradiance": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "diffuse_solar_irradiance_predicted_6h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "diffuse_solar_irradiance_predicted_12h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "diffuse_solar_irradiance_predicted_24h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": true
     },
     "direct_solar_irradiance": {
@@ -135,15 +135,15 @@
       "shared_in_central_agent": false
     },
     "electricity_pricing_predicted_6h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": false
     },
     "electricity_pricing_predicted_12h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": false
     },
     "electricity_pricing_predicted_24h": {
-      "active": true,
+      "active": false,
       "shared_in_central_agent": false
     }
   },
@@ -178,21 +178,22 @@
       "deterministic_start_time_step": null,
       "action_scaling_coef": 1.0,
       "reward_scaling": 1.0,
-      "update_per_time_step": 2
+      "update_per_time_step": 2,
+      "seed": 1
     }
   },
   "reward_function": {
-    "type": "reward.MultiplicativeReward",
+    "type": "reward.AdditiveReward",
     "attributes": {
-      "electricity_price_weight": 0.8,
-      "carbon_emission_weight": 0.19999999999999996,
-      "electricity_price_exponent": 1.0,
-      "carbon_emission_exponent": 1.0
+      "electricity_price_weight": 0.0,
+      "carbon_emission_weight": 1.0,
+      "electricity_price_exponent": 2.0,
+      "carbon_emission_exponent": 2.0
     }
   },
   "buildings": {
     "Building_1": {
-      "include": true,
+      "include": false,
       "energy_simulation": "Building_1.csv",
       "weather": "weather.csv",
       "carbon_intensity": "carbon_intensity.csv",
@@ -219,7 +220,7 @@
       }
     },
     "Building_2": {
-      "include": false,
+      "include": true,
       "energy_simulation": "Building_2.csv",
       "weather": "weather.csv",
       "carbon_intensity": "carbon_intensity.csv",
@@ -516,7 +517,7 @@
       }
     },
     "Building_13": {
-      "include": true,
+      "include": false,
       "energy_simulation": "Building_13.csv",
       "weather": "weather.csv",
       "carbon_intensity": "carbon_intensity.csv",
@@ -543,7 +544,7 @@
       }
     },
     "Building_14": {
-      "include": true,
+      "include": false,
       "energy_simulation": "Building_14.csv",
       "weather": "weather.csv",
       "carbon_intensity": "carbon_intensity.csv",

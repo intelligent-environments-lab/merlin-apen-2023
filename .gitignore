@@ -161,3 +161,6 @@ cython_debug/
 # do not track saved models
 data/archive
 data/result
+# data/schema
+# data/misc
+tacc/

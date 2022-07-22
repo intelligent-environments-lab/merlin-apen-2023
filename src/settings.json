@@ -1,6 +1,5 @@
 { 
     "max_workers": 5,
-    "schema_filepath": "/Users/kingsleyenweye/Desktop/INTELLIGENT_ENVIRONMENT_LAB/epri_data/data/citylearn_challenge_2022_phase_3/schema.json",
     "train_episodes": 10,
     "seeds": [0,1,2],
     "train_building_count": 5,
@@ -24,7 +23,12 @@
         "net_electricity_consumption",
         "electricity_pricing"
     ],
+    "tacc_queue": {
+        "normal": {"nodes":256, "time": "48:00:00"},
+        "long": {"nodes":32, "time": "120:00:00"}
+    },
     "reward_design": {
+        "tacc_queue": "long",
         "grid": {
             "type": ["reward.AdditiveReward"],
             "exponent": [1, 2],
@@ -33,6 +37,7 @@
     },
     "design_buildings": [2],
     "hyperparameter_design": {
+        "tacc_queue": "normal",
         "grid": {
             "discount": [0.90, 0.95, 0.99],
             "tau": [0.0005, 0.005, 0.05],
