@@ -2,4 +2,5 @@ git+https://github.com/intelligent-environments-lab/CityLearn.git@citylearn_2022
 ipykernel==6.15.0
 scikit-learn==1.0.2
 seaborn==0.11.2
-torch==1.1.0
+torch==1.12.0
+torchvision==0.13.0
