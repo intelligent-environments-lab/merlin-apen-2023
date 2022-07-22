@@ -188,12 +188,46 @@ def set_reward_design_work_order():
         with open(p,'w') as f:
             f.write(d)
 
+def get_tacc_job(experiment):
+    settings = get_settings()
+    queue = settings[experiment]['tacc_queue']
+    nodes = settings['tacc_queue'][queue]['nodes']
+    time = settings['tacc_queue'][queue]['time']
+    kwargs = preliminary_setup()
+    log_directory = kwargs['log_directory']
+    log_filepath = os.path.join(log_directory,f'slurm_{experiment}.out')
+    return '\n'.join([
+        '#!/bin/bash',
+        f'#SBATCH -p {queue}',
+        f'#SBATCH -J citylearn_buildsys_2022_{experiment}',
+        f'#SBATCH -N {nodes}',
+        '#SBATCH --tasks-per-node 1',
+        f'#SBATCH -t {time}',
+        '#SBATCH --mail-user=nweye@utexas.edu',
+        '#SBATCH --mail-type=all',
+        f'#SBATCH -o {log_directory}',
+        '#SBATCH -A DemandAnalysis',
+        '',
+        '# load modules',
+        'module load launcher',
+        '',
+        '# activate virtual environment',
+        'source /work/07083/ken658/projects/citylearn/buildsys_2022/env/bin/activate',
+        '',
+        '# set launcher environment variables',
+        'export LAUNCHER_WORKDIR="/work/07083/ken658/projects/citylearn/buildsys_2022/data/work_order"',
+        f'export LAUNCHER_JOB_FILE="{experiment}.sh"',
+        '',
+        '${LAUNCHER_DIR}/paramrun',
+    ])
+
 def preliminary_setup():
     # set filepaths and directories
     root_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts[0:-1])
     src_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts)
     data_set_directory = os.path.join(root_directory,'data','citylearn_challenge_2022_phase_3')
     schema_directory = os.path.join(root_directory,'data','schema')
+    log_directory = os.path.join(root_directory,'log')
     work_order_directory = os.path.join(root_directory,'data','work_order')
     misc_directory = os.path.join(root_directory,'data','misc')
     tacc_directory = os.path.join(root_directory,'tacc')
@@ -201,6 +235,7 @@ def preliminary_setup():
     os.makedirs(work_order_directory,exist_ok=True)
     os.makedirs(misc_directory,exist_ok=True)
     os.makedirs(tacc_directory,exist_ok=True)
+    os.makedirs(log_directory,exist_ok=True)
 
     # general simulation settings
     settings = get_settings()
@@ -224,6 +259,7 @@ def preliminary_setup():
         'work_order_directory': work_order_directory, 
         'misc_directory': misc_directory,
         'tacc_directory': tacc_directory,
+        'log_directory': log_directory,
     }
 
 def get_settings():
@@ -231,36 +267,6 @@ def get_settings():
     settings_filepath = os.path.join(src_directory,'settings.json')
     settings = read_json(settings_filepath)
     return settings
-
-def get_tacc_job(experiment):
-    settings = get_settings()
-    queue = settings[experiment]['tacc_queue']
-    nodes = settings['tacc_queue'][queue]['nodes']
-    time = settings['tacc_queue'][queue]['time']
-    return '\n'.join([
-        '#!/bin/bash',
-        f'#SBATCH -p {queue}',
-        f'#SBATCH -J citylearn_buildsys_2022_{experiment}',
-        f'#SBATCH -N {nodes}',
-        '#SBATCH --tasks-per-node 1',
-        f'#SBATCH -t {time}',
-        '#SBATCH --mail-user=nweye@utexas.edu',
-        '#SBATCH --mail-type=all',
-        f'#SBATCH -o slurm_{experiment}.out',
-        '#SBATCH -A DemandAnalysis',
-        '',
-        '# load modules',
-        'module load launcher',
-        '',
-        '# activate virtual environment',
-        'source /work/07083/ken658/projects/citylearn/buildsys_2022/env/bin/activate',
-        '',
-        '# set launcher environment variables',
-        'export LAUNCHER_WORKDIR="/work/07083/ken658/projects/citylearn/buildsys_2022/data/work_order"',
-        f'export LAUNCHER_JOB_FILE="{experiment}.sh"',
-        '',
-        '${LAUNCHER_DIR}/paramrun',
-    ])
 
 def set_work_order(experiment):
     func = {
