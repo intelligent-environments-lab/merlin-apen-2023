@@ -2,23 +2,37 @@
     "max_workers": 5,
     "schema_filepath": "/Users/kingsleyenweye/Desktop/INTELLIGENT_ENVIRONMENT_LAB/epri_data/data/citylearn_challenge_2022_phase_3/schema.json",
     "train_episodes": 10,
-    "seed": 0,
+    "seeds": [0,1,2],
     "train_building_count": 5,
     "train_start_time_step": 0,
     "train_end_time_step": 3671,
     "test_start_time_step": 3672,
     "test_end_time_step": 8759,
+    "observations": [
+        "month",
+        "day_type",
+        "hour",
+        "outdoor_dry_bulb_temperature",
+        "direct_solar_irradiance",
+        "direct_solar_irradiance_predicted_6h",
+        "direct_solar_irradiance_predicted_12h",
+        "direct_solar_irradiance_predicted_24h",
+        "carbon_intensity",
+        "non_shiftable_load",
+        "solar_generation",
+        "electrical_storage_soc",
+        "net_electricity_consumption",
+        "electricity_pricing"
+    ],
     "reward_design": {
-        "building_count": 3,
         "grid": {
-            "type": ["reward.AdditiveReward", "reward.MultiplicativeReward"],
+            "type": ["reward.AdditiveReward"],
             "exponent": [1, 2],
-            "weight": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+            "weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]
         }
     },
-    "design_buildings": [1, 13, 14],
+    "design_buildings": [2],
     "hyperparameter_design": {
-        "building_count": 2,
         "grid": {
             "discount": [0.90, 0.95, 0.99],
             "tau": [0.0005, 0.005, 0.05],
@@ -39,8 +53,8 @@
         "attributes": {
             "capacity": 6.4,
             "hour_index": 2,
-            "soc_index": 22,
-            "net_electricity_consumption_index": 23
+            "soc_index": 11,
+            "net_electricity_consumption_index": 12
         }
     },
     "default_agent": {
@@ -60,7 +74,8 @@
             "deterministic_start_time_step": null,
             "action_scaling_coef": 1.0,
             "reward_scaling": 1.0,
-            "update_per_time_step": 2
+            "update_per_time_step": 2,
+            "seed": 0
         }
     }
 }
