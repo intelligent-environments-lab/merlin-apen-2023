@@ -195,7 +195,10 @@ def get_tacc_job(experiment):
     time = settings['tacc_queue'][queue]['time']
     kwargs = preliminary_setup()
     log_directory = kwargs['log_directory']
+    tacc_directory = settings['tacc_directory']
     log_filepath = os.path.join(log_directory,f'slurm_{experiment}.out')
+    job_file = os.path.join(tacc_directory,'data','work_order',f'{experiment}.sh')
+    python_env = os.path.join(tacc_directory,'env','bin','activate')
     return '\n'.join([
         '#!/bin/bash',
         f'#SBATCH -p {queue}',
@@ -212,11 +215,11 @@ def get_tacc_job(experiment):
         'module load launcher',
         '',
         '# activate virtual environment',
-        'source /work/07083/ken658/projects/citylearn/buildsys_2022/env/bin/activate',
+        f'source {python_env}',
         '',
         '# set launcher environment variables',
-        'export LAUNCHER_DIR="/work/07083/ken658/projects/citylearn/buildsys_2022/data/work_order"',
-        f'export LAUNCHER_JOB_FILE="{experiment}.sh"',
+        f'export LAUNCHER_WORKDIR="{tacc_directory}"',
+        f'export LAUNCHER_JOB_FILE="{job_file}"',
         '',
         '${LAUNCHER_DIR}/paramrun',
     ])
