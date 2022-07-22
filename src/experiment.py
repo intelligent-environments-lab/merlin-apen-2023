@@ -205,7 +205,7 @@ def get_tacc_job(experiment):
         f'#SBATCH -t {time}',
         '#SBATCH --mail-user=nweye@utexas.edu',
         '#SBATCH --mail-type=all',
-        f'#SBATCH -o {log_directory}',
+        f'#SBATCH -o {log_filepath}',
         '#SBATCH -A DemandAnalysis',
         '',
         '# load modules',
