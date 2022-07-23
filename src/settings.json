@@ -38,7 +38,7 @@
     },
     "design_buildings": [2],
     "hyperparameter_design": {
-        "tacc_queue": "normal",
+        "tacc_queue": "long",
         "grid": {
             "discount": [0.90, 0.95, 0.99],
             "tau": [0.0005, 0.005, 0.05],
