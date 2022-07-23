@@ -6,7 +6,7 @@ import logging
 import sys
 import numpy as np
 from citylearn.citylearn import CityLearnEnv
-from src.experiment import preliminary_setup
+from experiment import preliminary_setup
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
