@@ -57,7 +57,7 @@ def run(experiment):
     with open(work_order_filepath,mode='r') as f:
         args = f.read()
     
-    args = args.split('\n')
+    args = args.strip('\n').split('\n')
     args = [shlex.split(a) for a in args]
     settings = get_settings()
     max_workers = settings['max_workers'] if settings.get('max_workers',None) is not None else cpu_count()
@@ -119,6 +119,7 @@ def set_hyperparameter_design_work_order():
         work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
 
     # write work order and tacc job
+    work_order.append('')
     work_order = '\n'.join(work_order)
     tacc_job = get_tacc_job(experiment)
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
@@ -162,6 +163,7 @@ def set_rbc_validation_work_order():
         work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
 
     # write work order
+    work_order.append('')
     work_order = '\n'.join(work_order)
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
 
@@ -193,7 +195,7 @@ def set_reward_design_work_order():
     param_values = list(reward_design_grid.values())
     param_values_grid = list(itertools.product(*param_values))
     grid = pd.DataFrame(param_values_grid,columns=param_names)
-    grid = grid.sort_values(['seed','weight','exponent'])
+    grid = grid.sort_values(['type','seed','weight','exponent'])
     grid['buildings'] = str(train_buildings)
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
     grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
@@ -217,6 +219,7 @@ def set_reward_design_work_order():
         work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
 
     # write work order and tacc job
+    work_order.append('')
     work_order = '\n'.join(work_order)
     tacc_job = get_tacc_job(experiment)
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
@@ -349,7 +352,7 @@ def main():
     subparser_run_work_order = subparsers.add_parser('run_work_order')
     subparser_run_work_order.set_defaults(func=run)
 
-    # result summary
+    # set result summary
     subparser_set_result_summary = subparsers.add_parser('set_result_summary')
     subparser_set_result_summary.set_defaults(func=set_result_summary)
     
