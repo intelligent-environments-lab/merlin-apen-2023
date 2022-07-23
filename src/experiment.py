@@ -20,6 +20,7 @@ def set_result_summary(experiment):
     records = []
 
     for f in filenames:
+        print(f'Reading {i + 1}/{len(filenames)}')
         episode = int(f.split('.')[0].split('_')[-1])
         simulation_id = '_'.join(f.split('_')[0:-2])
             
