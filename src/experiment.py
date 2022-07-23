@@ -19,7 +19,7 @@ def set_result_summary(experiment):
     filenames = [f for f in os.listdir(result_directory) if f.endswith('pkl') and experiment in f]
     records = []
 
-    for f in filenames:
+    for i, f in enumerate(filenames):
         print(f'Reading {i + 1}/{len(filenames)}')
         episode = int(f.split('.')[0].split('_')[-1])
         simulation_id = '_'.join(f.split('_')[0:-2])
@@ -29,15 +29,15 @@ def set_result_summary(experiment):
 
         rewards = pd.DataFrame(env.rewards)
         
-        for i, b in enumerate(env.buildings):
+        for j, b in enumerate(env.buildings):
             records.append({
                 'experiment':experiment,
                 'simulation_id':simulation_id,
                 'episode':episode,
-                'building_id':i,
+                'building_id':j,
                 'building_name':b.name,
-                'reward_sum':rewards[i].sum(),
-                'reward_mean':rewards[i].mean(),
+                'reward_sum':rewards[j].sum(),
+                'reward_mean':rewards[j].mean(),
                 'net_electricity_consumption_sum':b.net_electricity_consumption.sum(),
                 'net_electricity_consumption_emission_sum':b.net_electricity_consumption_emission.sum(),
                 'net_electricity_consumption_price_sum':b.net_electricity_consumption_price.sum(),
