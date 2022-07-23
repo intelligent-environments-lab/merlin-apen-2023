@@ -1,22 +1,20 @@
 import argparse
 import inspect
 import os
-from pathlib import Path
 import pickle
 import logging
 import sys
 from citylearn.citylearn import CityLearnEnv
+from src.experiment import preliminary_setup
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 def simulate(schema, simulation_id, static=False):
     # set filepaths and directories
-    root_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts[0:-1])
-    result_directory = os.path.join(root_directory,'data','result')
-    os.makedirs(result_directory,exist_ok=True)
-    log_directory = os.path.join(root_directory,'log')
-    os.makedirs(log_directory,exist_ok=True)
+    kwargs = preliminary_setup()
+    result_directory = kwargs['result_directory']
+    log_directory = kwargs['log_directory']
     log_filepath = os.path.join(log_directory, f'simulation_{simulation_id}.log')
 
     # set logger

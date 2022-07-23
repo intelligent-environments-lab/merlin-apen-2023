@@ -5,11 +5,49 @@ import itertools
 import os
 from multiprocessing import cpu_count
 from pathlib import Path
+import pickle
 import shlex
 import subprocess
 import sys
 import pandas as pd
 from citylearn.utilities import read_json, write_json
+
+def set_result_summary(experiment):
+    kwargs = preliminary_setup()
+    result_directory = kwargs['result_directory']
+    summary_directory = kwargs['summary_directory']
+    filenames = [f for f in os.listdir(result_directory) if f.endswith('pkl') and experiment in f]
+    records = []
+
+    for f in filenames:
+        episode = int(f.split('.')[0].split('_')[-1])
+        simulation_id = '_'.join(f.split('_')[0:-2])
+            
+        with (open(os.path.join(result_directory,f), 'rb')) as openfile:
+            env = pickle.load(openfile)
+
+        rewards = pd.DataFrame(env.rewards)
+        
+        for i, b in enumerate(env.buildings):
+            records.append({
+                'experiment':experiment,
+                'simulation_id':simulation_id,
+                'episode':episode,
+                'building_id':i,
+                'building_name':b.name,
+                'reward_sum':rewards[i].sum(),
+                'reward_mean':rewards[i].mean(),
+                'net_electricity_consumption_sum':b.net_electricity_consumption.sum(),
+                'net_electricity_consumption_emission_sum':b.net_electricity_consumption_emission.sum(),
+                'net_electricity_consumption_price_sum':b.net_electricity_consumption_price.sum(),
+                'net_electricity_consumption_without_storage_sum':b.net_electricity_consumption_without_storage.sum(),
+                'net_electricity_consumption_emission_without_storage_sum':b.net_electricity_consumption_without_storage_emission.sum(),
+                'net_electricity_consumption_price_without_storage_sum':b.net_electricity_consumption_without_storage_price.sum(),
+            })
+    
+    data = pd.DataFrame(records)
+    filepath = os.path.join(summary_directory,f'{experiment}.csv')
+    data.to_csv(filepath,index=False)
 
 def run(experiment):
     kwargs = preliminary_setup()
@@ -194,11 +232,12 @@ def get_tacc_job(experiment):
     nodes = settings['tacc_queue'][queue]['nodes']
     time = settings['tacc_queue'][queue]['time']
     kwargs = preliminary_setup()
+    root_directory = kwargs['root_directory']
     log_directory = kwargs['log_directory']
-    tacc_directory = settings['tacc_directory']
+    work_order_directory = kwargs['work_order_directory']
     log_filepath = os.path.join(log_directory,f'slurm_{experiment}.out')
-    job_file = os.path.join(tacc_directory,'data','work_order',f'{experiment}.sh')
-    python_env = os.path.join(tacc_directory,'env','bin','activate')
+    job_file = os.path.join(work_order_directory,f'{experiment}.sh')
+    python_env = os.path.join(root_directory,'env','bin','activate')
     return '\n'.join([
         '#!/bin/bash',
         f'#SBATCH -p {queue}',
@@ -218,7 +257,7 @@ def get_tacc_job(experiment):
         f'source {python_env}',
         '',
         '# set launcher environment variables',
-        f'export LAUNCHER_WORKDIR="{tacc_directory}"',
+        f'export LAUNCHER_WORKDIR="{root_directory}"',
         f'export LAUNCHER_JOB_FILE="{job_file}"',
         '',
         '${LAUNCHER_DIR}/paramrun',
@@ -227,18 +266,27 @@ def get_tacc_job(experiment):
 def preliminary_setup():
     # set filepaths and directories
     root_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts[0:-1])
-    src_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts)
-    data_set_directory = os.path.join(root_directory,'data','citylearn_challenge_2022_phase_3')
-    schema_directory = os.path.join(root_directory,'data','schema')
+
+    src_directory = os.path.join(root_directory,'src')
+    job_directory = os.path.join(root_directory,'job')
     log_directory = os.path.join(root_directory,'log')
-    work_order_directory = os.path.join(root_directory,'data','work_order')
-    misc_directory = os.path.join(root_directory,'data','misc')
-    tacc_directory = os.path.join(root_directory,'tacc')
+    data_directory = os.path.join(root_directory,'data')
+
+    tacc_directory = os.path.join(job_directory,'tacc')
+    work_order_directory = os.path.join(job_directory,'work_order')
+    data_set_directory = os.path.join(data_directory,'citylearn_challenge_2022_phase_3')
+    schema_directory = os.path.join(data_directory,'schema')
+    misc_directory = os.path.join(data_directory,'misc')
+    result_directory = os.path.join(data_directory,'result')
+    summary_directory = os.path.join(data_directory,'summary')
+
     os.makedirs(schema_directory,exist_ok=True)
     os.makedirs(work_order_directory,exist_ok=True)
     os.makedirs(misc_directory,exist_ok=True)
     os.makedirs(tacc_directory,exist_ok=True)
     os.makedirs(log_directory,exist_ok=True)
+    os.makedirs(result_directory,exist_ok=True)
+    os.makedirs(summary_directory,exist_ok=True)
 
     # general simulation settings
     settings = get_settings()
@@ -263,6 +311,8 @@ def preliminary_setup():
         'misc_directory': misc_directory,
         'tacc_directory': tacc_directory,
         'log_directory': log_directory,
+        'result_directory': result_directory,
+        'summary_directory': summary_directory,
     }
 
 def get_settings():
@@ -298,6 +348,10 @@ def main():
     # run work order
     subparser_run_work_order = subparsers.add_parser('run_work_order')
     subparser_run_work_order.set_defaults(func=run)
+
+    # result summary
+    subparser_set_result_summary = subparsers.add_parser('set_result_summary')
+    subparser_set_result_summary.set_defaults(func=set_result_summary)
     
     args = parser.parse_args()
     arg_spec = inspect.getfullargspec(args.func)
