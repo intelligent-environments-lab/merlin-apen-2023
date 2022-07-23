@@ -4,6 +4,7 @@ import os
 import pickle
 import logging
 import sys
+import numpy as np
 from citylearn.citylearn import CityLearnEnv
 from src.experiment import preliminary_setup
 
@@ -36,6 +37,10 @@ def simulate(schema, simulation_id, static=False):
 
             # apply actions to env
             next_observations_list, reward_list, _, _ = env.step(actions_list)
+
+            # recalculate reward
+            env.reward_function.kwargs['electrical_storage_soc'] = np.array([b.observations['electrical_storage_soc'] for b in env.buildings])
+            reward_list = env.reward_function.calculate()
 
             # update
             if not static:
