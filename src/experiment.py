@@ -74,62 +74,6 @@ def run(experiment):
             except Exception as e:
                 print(e)
 
-def set_hyperparameter_design_work_order():
-    experiment = 'hyperparameter_design'
-    kwargs = preliminary_setup()
-    schema = kwargs['schema']
-    schema_directory = kwargs['schema_directory']
-    src_directory = kwargs['src_directory']
-    misc_directory = kwargs['misc_directory']
-    work_order_directory = kwargs['work_order_directory']
-    tacc_directory = kwargs['tacc_directory']
-    settings = get_settings()
-
-    # set active buildings
-    train_buildings = settings['design_buildings']
-
-    for building in schema['buildings']:
-        schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
-
-    # set reward
-    schema['reward'] = settings[experiment]['reward']
-
-    # hyperparameter definition
-    hyperparameter_grid = settings[experiment]['grid']
-    hyperparameter_grid['seed'] = settings['seeds']
-    param_names = list(hyperparameter_grid.keys())
-    param_values = list(hyperparameter_grid.values())
-    param_values_grid = list(itertools.product(*param_values))
-    grid = pd.DataFrame(param_values_grid,columns=param_names)
-    grid = grid.sort_values(['seed'])
-    grid['buildings'] = str(train_buildings)
-    grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
-    grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
-
-    # design work order
-    work_order = []
-
-    for i, params in enumerate(grid.to_dict('records')):
-        params['seed'] = int(params['seed'])
-        schema['agent']['attributes'] = {
-            **schema['agent']['attributes'],
-            **params
-        }
-        schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
-        write_json(schema_filepath, schema)
-        work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
-
-    # write work order and tacc job
-    work_order.append('')
-    work_order = '\n'.join(work_order)
-    tacc_job = get_tacc_job(experiment)
-    work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
-    tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
-
-    for d, p in zip([work_order,tacc_job],[work_order_filepath,tacc_job_filepath]):
-        with open(p,'w') as f:
-            f.write(d)
-
 def set_rbc_validation_work_order():
     experiment = 'rbc_validation'
     kwargs = preliminary_setup()
@@ -171,7 +115,68 @@ def set_rbc_validation_work_order():
     with open(work_order_filepath,'w') as f:
         f.write(work_order)
 
-    return work_order_filepath
+def set_hyperparameter_design_work_order():
+    experiment = 'hyperparameter_design'
+    kwargs = preliminary_setup()
+    schema = kwargs['schema']
+    schema_directory = kwargs['schema_directory']
+    src_directory = kwargs['src_directory']
+    misc_directory = kwargs['misc_directory']
+    work_order_directory = kwargs['work_order_directory']
+    tacc_directory = kwargs['tacc_directory']
+    settings = get_settings()
+
+    # set active buildings
+    train_buildings = settings['design_buildings']
+
+    for building in schema['buildings']:
+        schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
+
+    # set reward
+    schema['reward'] = settings[experiment]['reward']
+
+    # hyperparameter definition
+    hyperparameter_grid = settings[experiment]['grid']
+    param_names = list(hyperparameter_grid.keys())
+    param_values = list(hyperparameter_grid.values())
+    param_values_grid = list(itertools.product(*param_values))
+    grid = pd.DataFrame(param_values_grid,columns=param_names)
+    grid['group'] = grid.index
+    grid_list = []
+
+    for seed in settings['seeds']:
+        grid['seed'] = seed
+        grid_list.append(grid.copy())
+
+    grid = pd.concat(grid_list,ignore_index=True)
+    grid = grid.sort_values(['seed'])
+    grid['buildings'] = str(train_buildings)
+    grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
+    grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
+
+    # design work order
+    work_order = []
+
+    for i, params in enumerate(grid.to_dict('records')):
+        params['seed'] = int(params['seed'])
+        schema['agent']['attributes'] = {
+            **schema['agent']['attributes'],
+            **params
+        }
+        schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
+        write_json(schema_filepath, schema)
+        work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
+
+    # write work order and tacc job
+    work_order.append('')
+    work_order = '\n'.join(work_order)
+    tacc_job = get_tacc_job(experiment)
+    work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
+    tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
+
+    for d, p in zip([work_order,tacc_job],[work_order_filepath,tacc_job_filepath]):
+        with open(p,'w') as f:
+            f.write(d)
 
 def set_reward_design_work_order():
     # buildings to include
@@ -191,11 +196,18 @@ def set_reward_design_work_order():
 
     # reward definition
     reward_design_grid = settings[experiment]['grid']
-    reward_design_grid['seed'] = settings['seeds']
     param_names = list(reward_design_grid.keys())
     param_values = list(reward_design_grid.values())
     param_values_grid = list(itertools.product(*param_values))
     grid = pd.DataFrame(param_values_grid,columns=param_names)
+    grid['group'] = grid.index
+    grid_list = []
+
+    for seed in settings['seeds']:
+        grid['seed'] = seed
+        grid_list.append(grid.copy())
+
+    grid = pd.concat(grid_list,ignore_index=True)
     grid = grid.sort_values(['type','seed','weight','exponent'])
     grid['buildings'] = str(train_buildings)
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
