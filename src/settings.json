@@ -29,6 +29,7 @@
         "long": {"nodes":32, "time": "120:00:00"},
         "skx-normal": {"nodes":128, "time": "48:00:00"}
     },
+    "design_buildings": [2],
     "reward_design": {
         "tacc_queue": "long",
         "grid": {
@@ -37,7 +38,6 @@
             "weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]
         }
     },
-    "design_buildings": [2],
     "hyperparameter_design": {
         "tacc_queue": "skx-normal",
         "grid": {
@@ -45,15 +45,6 @@
             "tau": [0.0005, 0.005, 0.05],
             "lr": [0.00005, 0.0005, 0.005],
             "alpha": [0.2, 0.5, 0.8]
-        },
-        "reward": {
-            "type": "reward.AdditiveSolarPenaltyReward",
-            "attributes": {
-                "carbon_emission_exponent": 1.0,
-                "electricity_price_exponent": 1.0,
-                "carbon_emission_weight": 0.5,
-                "electricity_price_weight": 0.5
-            }
         }
     },
     "rbc_validation": {
@@ -84,6 +75,15 @@
             "reward_scaling": 1.0,
             "update_per_time_step": 2,
             "seed": 0
+        }
+    },
+    "default_reward_function": {
+        "type": "reward.AdditiveSolarPenaltyReward",
+        "attributes": {
+            "carbon_emission_exponent": 1.0,
+            "electricity_price_exponent": 1.0,
+            "carbon_emission_weight": 0.5,
+            "electricity_price_weight": 0.5
         }
     }
 }

@@ -132,9 +132,6 @@ def set_hyperparameter_design_work_order():
     for building in schema['buildings']:
         schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
 
-    # set reward
-    schema['reward'] = settings[experiment]['reward']
-
     # hyperparameter definition
     hyperparameter_grid = settings[experiment]['grid']
     param_names = list(hyperparameter_grid.keys())
@@ -295,6 +292,7 @@ def preliminary_setup():
     misc_directory = os.path.join(data_directory,'misc')
     result_directory = os.path.join(data_directory,'result')
     summary_directory = os.path.join(data_directory,'summary')
+    figure_directory = os.path.join(root_directory,'figures')
 
     os.makedirs(schema_directory,exist_ok=True)
     os.makedirs(work_order_directory,exist_ok=True)
@@ -303,6 +301,7 @@ def preliminary_setup():
     os.makedirs(log_directory,exist_ok=True)
     os.makedirs(result_directory,exist_ok=True)
     os.makedirs(summary_directory,exist_ok=True)
+    os.makedirs(figure_directory,exist_ok=True)
 
     # general simulation settings
     settings = get_settings()
@@ -317,6 +316,8 @@ def preliminary_setup():
 
     # define agent
     schema['agent'] = settings['default_agent']
+    # set reward
+    schema['reward_function'] = settings['default_reward_function']
 
     return {
         'schema': schema, 
@@ -329,6 +330,7 @@ def preliminary_setup():
         'log_directory': log_directory,
         'result_directory': result_directory,
         'summary_directory': summary_directory,
+        'figure_directory': figure_directory,
     }
 
 def get_settings():
