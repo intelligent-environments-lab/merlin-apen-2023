@@ -27,7 +27,8 @@
     "tacc_queue": {
         "normal": {"nodes":256, "time": "48:00:00"},
         "long": {"nodes":32, "time": "120:00:00"},
-        "skx-normal": {"nodes":128, "time": "48:00:00"}
+        "skx-normal": {"nodes":128, "time": "48:00:00"},
+        "skx-dev": {"nodes":4, "time": "02:00:00"}
     },
     "design_buildings": [2],
     "reward_design": {
@@ -74,7 +75,7 @@
         "tacc_queue": "skx-normal"
     },
     "deployment_strategy_3_0": {
-        "tacc_queue": "skx-normal"
+        "tacc_queue": "skx-dev"
     },
     "deployment_strategy_3_1": {
         "tacc_queue": "skx-normal"
