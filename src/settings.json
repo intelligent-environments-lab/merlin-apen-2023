@@ -68,16 +68,16 @@
         }
     },
     "deployment_strategy_1_0": {
-        "tacc_queue": "long"
+        "tacc_queue": "skx-normal"
     },
     "deployment_strategy_2_0": {
-        "tacc_queue": "long"
+        "tacc_queue": "skx-normal"
     },
     "deployment_strategy_3_0": {
-        "tacc_queue": "long"
+        "tacc_queue": "skx-normal"
     },
     "deployment_strategy_3_1": {
-        "tacc_queue": "long"
+        "tacc_queue": "skx-normal"
     },
     "default_agent": {
         "type": "citylearn.agents.sac.SAC",
