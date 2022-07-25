@@ -143,7 +143,7 @@ def set_deployment_strategy_work_order(experiment):
     # write work order and tacc job
     work_order.append('')
     work_order = '\n'.join(work_order)
-    tacc_job = get_tacc_job(experiment)
+    tacc_job = get_tacc_job(experiment, nodes=len(work_order))
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
     tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
 
@@ -335,10 +335,11 @@ def set_reward_design_work_order(experiment):
         with open(p,'w') as f:
             f.write(d)
 
-def get_tacc_job(experiment):
+def get_tacc_job(experiment, nodes=None):
     settings = get_settings()
     queue = settings[experiment]['tacc_queue']
-    nodes = settings['tacc_queue'][queue]['nodes']
+    nodes = settings['tacc_queue'][queue]['nodes'] if nodes is None else min(settings['tacc_queue'][queue]['nodes'], nodes)
+    nodes = int(nodes)
     time = settings['tacc_queue'][queue]['time']
     kwargs = preliminary_setup()
     root_directory = kwargs['root_directory']
