@@ -74,8 +74,106 @@ def run(experiment):
             except Exception as e:
                 print(e)
 
-def set_rbc_validation_work_order():
-    experiment = 'rbc_validation'
+def set_deployment_strategy_work_order(experiment):
+    kwargs = preliminary_setup()
+    schema = kwargs['schema']
+    schema_directory = kwargs['schema_directory']
+    src_directory = kwargs['src_directory']
+    misc_directory = kwargs['misc_directory']
+    work_order_directory = kwargs['work_order_directory']
+    tacc_directory = kwargs['tacc_directory']
+    settings = get_settings()
+
+    # 1_0 - all buildings, find optimal policy on full year data
+    # 2_0 - transfer policy from best & worst in 1_0 to all other buildings for 1 episode & evaluate determinitically
+    # 3_0 - all buildings, find optimal policy on half year data
+    # 3_1 - transfer policy from best & worst in 3_0 to all other buildings for 1 episode & evaluate determinitically
+    simulation_end_time_step = {
+        'deployment_strategy_1_0':settings["test_end_time_step"], 
+        'deployment_strategy_2_0':settings["test_end_time_step"], 
+        'deployment_strategy_3_0':settings["train_end_time_step"], 
+        'deployment_strategy_3_1':settings["test_end_time_step"],
+    }
+    episodes = {
+        'deployment_strategy_1_0':schema['episodes'] + 1,
+        'deployment_strategy_2_0':1,
+        'deployment_strategy_3_0':schema['episodes'] + 1,
+        'deployment_strategy_3_1':1,
+    }
+    deterministic_start_time_step = {
+        'deployment_strategy_1_0':(simulation_end_time_step[experiment] + 1)*(episodes[experiment] - 1),
+        'deployment_strategy_2_0':0,
+        'deployment_strategy_3_0':(simulation_end_time_step[experiment] + 1)*(episodes[experiment] - 1),
+        'deployment_strategy_3_1':0,
+    }
+    save_episode_agent = {
+        'deployment_strategy_1_0':episodes[experiment] - 2,
+        'deployment_strategy_2_0':None,
+        'deployment_strategy_3_0':episodes[experiment] - 2,
+        'deployment_strategy_3_1':None,
+    }
+
+    # set optimal schema
+    schema = get_optimal_schema(schema)
+    schema['simulation_end_time_step'] = simulation_end_time_step[experiment]
+    schema['agent']['attributes']['deterministic_start_time_step'] = deterministic_start_time_step[experiment]
+    schema['episodes'] = episodes[experiment]
+    
+    # set grid
+    grid = pd.DataFrame({'seed':settings['seeds']})
+    grid['group'] = 0
+    grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
+    grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
+
+    # design work order
+    work_order = []
+
+    for i, params in enumerate(grid.to_dict('records')):
+        schema['agent']['attributes'] = {
+            **schema['agent']['attributes'],
+            'seed':int(params['seed'])
+        }
+        schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
+        write_json(schema_filepath, schema)
+        agent_episode = save_episode_agent[experiment]
+        command = f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}'
+        command += f' --save_episode_agent {agent_episode}' if agent_episode is not None else ''
+        work_order.append(command)
+
+    # write work order and tacc job
+    work_order.append('')
+    work_order = '\n'.join(work_order)
+    tacc_job = get_tacc_job(experiment)
+    work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
+    tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
+
+    for d, p in zip([work_order,tacc_job],[work_order_filepath,tacc_job_filepath]):
+        with open(p,'w') as f:
+            f.write(d)
+
+def get_optimal_schema(schema):
+    settings = get_settings()
+
+    # optimal reward
+    schema['reward_function'] = {
+        'type': settings['reward_design']['optimal']['type'],
+        'attributes': {
+            'electricity_price_weight': float(settings['reward_design']['optimal']['weight']),
+            'carbon_emission_weight': float(1.0 - settings['reward_design']['optimal']['weight']),
+            'electricity_price_exponent': float(settings['reward_design']['optimal']['exponent']),
+            'carbon_emission_exponent': float(settings['reward_design']['optimal']['exponent']),
+        } 
+    }
+
+    # optimal agent
+    schema['agent']['attributes'] = {
+        **schema['agent']['attributes'],
+        **settings['hyperparameter_design']['optimal']
+    }
+
+    return schema
+
+def set_rbc_validation_work_order(experiment):
     kwargs = preliminary_setup()
     schema = kwargs['schema']
     schema_directory = kwargs['schema_directory']
@@ -115,8 +213,7 @@ def set_rbc_validation_work_order():
     with open(work_order_filepath,'w') as f:
         f.write(work_order)
 
-def set_hyperparameter_design_work_order():
-    experiment = 'hyperparameter_design'
+def set_hyperparameter_design_work_order(experiment):
     kwargs = preliminary_setup()
     schema = kwargs['schema']
     schema_directory = kwargs['schema_directory']
@@ -175,9 +272,7 @@ def set_hyperparameter_design_work_order():
         with open(p,'w') as f:
             f.write(d)
 
-def set_reward_design_work_order():
-    # buildings to include
-    experiment = 'reward_design'
+def set_reward_design_work_order(experiment):
     kwargs = preliminary_setup()
     schema = kwargs['schema']
     misc_directory = kwargs['misc_directory']
@@ -188,6 +283,7 @@ def set_reward_design_work_order():
     settings = get_settings()
     train_buildings = settings['design_buildings']
     
+    # buildings to include
     for building in schema['buildings']:
         schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
 
@@ -344,14 +440,22 @@ def set_work_order(experiment):
         'reward_design':set_reward_design_work_order,
         'hyperparameter_design':set_hyperparameter_design_work_order,
         'rbc_validation':set_rbc_validation_work_order,
+        'deployment_strategy_1_0':set_deployment_strategy_work_order,
+        'deployment_strategy_2_0':set_deployment_strategy_work_order,
+        'deployment_strategy_3_0':set_deployment_strategy_work_order,
+        'deployment_strategy_3_1':set_deployment_strategy_work_order,
     }[experiment]
-    func()
+    func(experiment)
 
 def get_experiments():
     return [
         'reward_design',
         'hyperparameter_design',
         'rbc_validation',
+        'deployment_strategy_1_0',
+        'deployment_strategy_2_0',
+        'deployment_strategy_3_0',
+        'deployment_strategy_3_1',
     ]
 
 def main():

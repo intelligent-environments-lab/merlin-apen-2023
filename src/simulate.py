@@ -1,6 +1,7 @@
 import argparse
 import inspect
 import os
+from pathlib import Path
 import pickle
 import logging
 import sys
@@ -11,7 +12,7 @@ from experiment import preliminary_setup
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-def simulate(schema, simulation_id, static=False):
+def simulate(schema, simulation_id, static=False,save_episode_agent=None, agent_filepath=None):
     # set filepaths and directories
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
@@ -26,7 +27,12 @@ def simulate(schema, simulation_id, static=False):
 
     # set env
     env = CityLearnEnv(schema)
-    agents = env.load_agents()
+
+    if agent_filepath is None:
+        agents = env.load_agents()
+    else:
+        with (open(Path(agent_filepath), 'rb')) as openfile:
+            agents = pickle.load(openfile)
 
     for episode in range(env.schema['episodes']):
         observations_list = env.reset()
@@ -59,15 +65,24 @@ def simulate(schema, simulation_id, static=False):
                             f' Rewards: {reward_list}'
             )
 
-        # save result
+        # save env
         with open(os.path.join(result_directory, f'{simulation_id}_episode_{int(episode)}.pkl'),'wb') as f:
             pickle.dump(env,f)
+
+        # save agents
+        if save_episode_agent is not None and episode == save_episode_agent:
+            with open(os.path.join(result_directory, f'{simulation_id}_agent_episode_{int(episode)}.pkl'),'wb') as f:
+                pickle.dump(agents,f)
+    else:
+        pass
 
 def main():
     parser = argparse.ArgumentParser(prog='buildsys_2022_simulate',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('schema',type=str)
     parser.add_argument('simulation_id',type=str)
     parser.add_argument('--static',action='store_true',dest='static')
+    parser.add_argument('--save_episode_agent',type=int,default=None,dest='save_episode_agent')
+    parser.add_argument('--agent_filepath',type=str,default=None,dest='agent_filepath')
 
     args = parser.parse_args()
     arg_spec = inspect.getfullargspec(simulate)

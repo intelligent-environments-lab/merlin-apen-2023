@@ -36,6 +36,11 @@
             "type": ["reward.AdditiveReward", "reward.AdditiveSolarPenaltyReward"],
             "exponent": [1, 2],
             "weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]
+        },
+        "optimal": {
+            "type": "reward.AdditiveSolarPenaltyReward",
+            "exponent": 1,
+            "weight": 1.0
         }
     },
     "hyperparameter_design": {
@@ -45,6 +50,12 @@
             "tau": [0.0005, 0.005, 0.05],
             "lr": [0.00005, 0.0005, 0.005],
             "alpha": [0.2, 0.5, 0.8]
+        },
+        "optimal": {
+            "discount": 0.99,
+            "tau": 0.05,
+            "lr": 0.00005,
+            "alpha": 0.8
         }
     },
     "rbc_validation": {
@@ -55,6 +66,18 @@
             "soc_index": 11,
             "net_electricity_consumption_index": 12
         }
+    },
+    "deployment_strategy_1_0": {
+        "tacc_queue": "skx-normal"
+    },
+    "deployment_strategy_2_0": {
+        "tacc_queue": "skx-normal"
+    },
+    "deployment_strategy_3_0": {
+        "tacc_queue": "skx-normal"
+    },
+    "deployment_strategy_3_1": {
+        "tacc_queue": "skx-normal"
     },
     "default_agent": {
         "type": "citylearn.agents.sac.SAC",
