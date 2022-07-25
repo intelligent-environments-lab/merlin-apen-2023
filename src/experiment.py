@@ -141,9 +141,9 @@ def set_deployment_strategy_work_order(experiment):
         work_order.append(command)
 
     # write work order and tacc job
+    tacc_job = get_tacc_job(experiment, nodes=len(work_order) + 1)
     work_order.append('')
     work_order = '\n'.join(work_order)
-    tacc_job = get_tacc_job(experiment, nodes=len(work_order))
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
     tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
 
