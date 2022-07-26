@@ -75,7 +75,7 @@
         "tacc_queue": "skx-normal"
     },
     "deployment_strategy_3_0": {
-        "tacc_queue": "skx-dev"
+        "tacc_queue": "skx-normal"
     },
     "deployment_strategy_3_1": {
         "tacc_queue": "skx-normal"
