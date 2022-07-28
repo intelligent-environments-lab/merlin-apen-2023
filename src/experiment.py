@@ -16,7 +16,10 @@ def set_result_summary(experiment):
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
     summary_directory = kwargs['summary_directory']
-    filenames = [f for f in os.listdir(result_directory) if f.endswith('pkl') and experiment in f]
+    filenames = [
+        f for f in os.listdir(result_directory) 
+        if f.endswith('pkl') and experiment in f and 'agent' not in f
+    ]
     records = []
 
     for i, f in enumerate(filenames):
