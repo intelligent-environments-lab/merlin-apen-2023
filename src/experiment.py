@@ -12,7 +12,56 @@ import sys
 import pandas as pd
 from citylearn.utilities import read_json, write_json
 
-def set_result_summary(experiment):
+def set_result_summary(experiment,detailed=False):
+    if detailed:
+        set_detailed_summary(experiment)
+    else:
+        set_brief_summary(experiment)
+
+def set_detailed_summary(experiment):
+    kwargs = preliminary_setup()
+    result_directory = kwargs['result_directory']
+    summary_directory = kwargs['summary_directory']
+    filenames = [
+        f for f in os.listdir(result_directory) 
+        if f.endswith('pkl') and experiment in f and 'agent' not in f
+    ]
+    data_list = []
+
+    for i, f in enumerate(filenames):
+        print(f'Reading {i + 1}/{len(filenames)}')
+        episode = int(f.split('.')[0].split('_')[-1])
+        simulation_id = '_'.join(f.split('_')[0:-2])
+            
+        with (open(os.path.join(result_directory,f), 'rb')) as openfile:
+            env = pickle.load(openfile)
+
+        rewards = pd.DataFrame(env.rewards)
+        
+        for j, b in enumerate(env.buildings):
+            temp_data = pd.DataFrame({
+                'net_electricity_consumption':b.net_electricity_consumption,
+                'net_electricity_consumption_emission':b.net_electricity_consumption_emission,
+                'net_electricity_consumption_price':b.net_electricity_consumption_price,
+                'net_electricity_consumption_without_storage':b.net_electricity_consumption_without_storage,
+                'net_electricity_consumption_emission_without_storage':b.net_electricity_consumption_without_storage_emission,
+                'net_electricity_consumption_price_without_storage':b.net_electricity_consumption_without_storage_price,
+                'net_electricity_consumption_without_storage_and_pv':b.net_electricity_consumption_without_storage_and_pv,
+                'electrical_storage_soc':b.electrical_storage.soc,
+                'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
+            })
+            temp_data['experiment'] = experiment
+            temp_data['simulation_id'] = simulation_id
+            temp_data['episode'] = episode
+            temp_data['building_id'] = j
+            temp_data['building_name'] = b.name
+            data_list.append(temp_data)
+    
+    data = pd.concat(data_list,ignore_index=True)
+    filepath = os.path.join(summary_directory,f'{experiment}_detailed.csv')
+    data.to_csv(filepath,index=False)
+
+def set_brief_summary(experiment):
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
     summary_directory = kwargs['summary_directory']
@@ -50,7 +99,7 @@ def set_result_summary(experiment):
             })
     
     data = pd.DataFrame(records)
-    filepath = os.path.join(summary_directory,f'{experiment}.csv')
+    filepath = os.path.join(summary_directory,f'{experiment}_brief.csv')
     data.to_csv(filepath,index=False)
 
 def run(experiment):
@@ -477,6 +526,7 @@ def main():
 
     # set result summary
     subparser_set_result_summary = subparsers.add_parser('set_result_summary')
+    subparser_set_result_summary.add_argument('-d','--detailed',action='store_true',dest='detailed')
     subparser_set_result_summary.set_defaults(func=set_result_summary)
     
     args = parser.parse_args()
