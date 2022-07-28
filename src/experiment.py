@@ -51,6 +51,7 @@ def set_detailed_summary(experiment):
                 'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
                 'reward':rewards[j].tolist(),
             })
+            temp_data['time_step'] = temp_data.index
             temp_data['experiment'] = experiment
             temp_data['simulation_id'] = simulation_id
             temp_data['episode'] = episode
