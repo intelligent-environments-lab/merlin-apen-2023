@@ -32,3 +32,16 @@ class AdditiveSolarPenaltyReward(RewardFunction):
         soc = self.kwargs.get('electrical_storage_soc', np.array([0.0]*self.agent_count))
         reward = -(1.0 + np.sign(electricity_price)*soc)*abs(carbon_emission + electricity_price)
         return reward
+
+class RampingReward(RewardFunction):
+    def __init__(self, electricity_consumption: List[float] = None, **kwargs):
+        super().__init__(electricity_consumption=electricity_consumption, **kwargs)
+        self.previous_electricity_consumption_sum = 0.0
+
+    def calculate(self) -> List[float]:
+        electricity_consumption_sum = sum(self.electricity_consumption)
+        reward = (abs(electricity_consumption_sum - self.previous_electricity_consumption_sum))**2
+        self.previous_electricity_consumption_sum = electricity_consumption_sum
+        reward = np.array([-reward for _ in self.electricity_consumption], dtype=float)
+        print(reward)
+        return reward

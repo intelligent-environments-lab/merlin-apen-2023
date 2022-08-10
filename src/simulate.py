@@ -12,7 +12,7 @@ from experiment import preliminary_setup
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-def simulate(schema, simulation_id, static=False,save_episode_agent=None, agent_filepath=None):
+def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent_filepath=None, recalculate_reward=None):
     # set filepaths and directories
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
@@ -44,9 +44,11 @@ def simulate(schema, simulation_id, static=False,save_episode_agent=None, agent_
             # apply actions to env
             next_observations_list, reward_list, _, _ = env.step(actions_list)
 
-            # recalculate reward
-            env.reward_function.kwargs['electrical_storage_soc'] = np.array([b.observations['electrical_storage_soc'] for b in env.buildings])
-            reward_list = env.reward_function.calculate()
+            if recalculate_reward:
+                env.reward_function.kwargs['electrical_storage_soc'] = np.array([b.observations['electrical_storage_soc'] for b in env.buildings])
+                reward_list = env.reward_function.calculate()
+            else:
+                pass
 
             # update
             if not static:
@@ -83,6 +85,7 @@ def main():
     parser.add_argument('--static',action='store_true',dest='static')
     parser.add_argument('--save_episode_agent',type=int,default=None,dest='save_episode_agent')
     parser.add_argument('--agent_filepath',type=str,default=None,dest='agent_filepath')
+    parser.add_argument('--recalculate_reward',action='store_true',dest='recalculate_reward')
 
     args = parser.parse_args()
     arg_spec = inspect.getfullargspec(simulate)
