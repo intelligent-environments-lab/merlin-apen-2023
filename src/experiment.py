@@ -92,12 +92,12 @@ def set_brief_summary(experiment):
                 'building_name':b.name,
                 'reward_sum':rewards[j].sum(),
                 'reward_mean':rewards[j].mean(),
-                'net_electricity_consumption_sum':b.net_electricity_consumption.sum(),
-                'net_electricity_consumption_emission_sum':b.net_electricity_consumption_emission.sum(),
-                'net_electricity_consumption_price_sum':b.net_electricity_consumption_price.sum(),
-                'net_electricity_consumption_without_storage_sum':b.net_electricity_consumption_without_storage.sum(),
-                'net_electricity_consumption_emission_without_storage_sum':b.net_electricity_consumption_without_storage_emission.sum(),
-                'net_electricity_consumption_price_without_storage_sum':b.net_electricity_consumption_without_storage_price.sum(),
+                'net_electricity_consumption_sum':sum(b.net_electricity_consumption),
+                'net_electricity_consumption_emission_sum':sum(b.net_electricity_consumption_emission),
+                'net_electricity_consumption_price_sum':sum(b.net_electricity_consumption_price),
+                'net_electricity_consumption_without_storage_sum':sum(b.net_electricity_consumption_without_storage),
+                'net_electricity_consumption_emission_without_storage_sum':sum(b.net_electricity_consumption_without_storage_emission),
+                'net_electricity_consumption_price_without_storage_sum':sum(b.net_electricity_consumption_without_storage_price),
             })
     
     data = pd.DataFrame(records)

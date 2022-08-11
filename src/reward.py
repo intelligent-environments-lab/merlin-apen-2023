@@ -43,5 +43,4 @@ class RampingReward(RewardFunction):
         reward = (abs(electricity_consumption_sum - self.previous_electricity_consumption_sum))**2
         self.previous_electricity_consumption_sum = electricity_consumption_sum
         reward = np.array([-reward for _ in self.electricity_consumption], dtype=float)
-        print(reward)
         return reward
