@@ -49,6 +49,7 @@ def set_detailed_summary(experiment):
                 'net_electricity_consumption_without_storage_and_pv':b.net_electricity_consumption_without_storage_and_pv,
                 'electrical_storage_soc':b.electrical_storage.soc,
                 'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
+                'electrical_storage_soc':b.electrical_storage.soc,
                 'reward':rewards[j].tolist(),
             })
             temp_data['time_step'] = temp_data.index
