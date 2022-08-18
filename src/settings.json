@@ -29,7 +29,7 @@
         "skx-normal": {"nodes":128, "time": "48:00:00"},
         "skx-dev": {"nodes":4, "time": "02:00:00"}
     },
-    "design_buildings": [2],
+    "design_buildings": [2, 9, 12, 14, 16],
     "reward_design": {
         "tacc_queue": "long",
         "grid": [{
