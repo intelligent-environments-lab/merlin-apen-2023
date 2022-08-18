@@ -444,7 +444,7 @@ def preliminary_setup():
 
     tacc_directory = os.path.join(job_directory,'tacc')
     work_order_directory = os.path.join(job_directory,'work_order')
-    data_set_directory = os.path.join(data_directory,'citylearn_challenge_2022_phase_1')
+    data_set_directory = os.path.join(data_directory,'citylearn_challenge_2022_phase_3')
     schema_directory = os.path.join(data_directory,'schema')
     misc_directory = os.path.join(data_directory,'misc')
     result_directory = os.path.join(data_directory,'result')
