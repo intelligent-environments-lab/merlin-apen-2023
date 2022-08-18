@@ -49,7 +49,6 @@ def set_detailed_summary(experiment):
                 'net_electricity_consumption_without_storage_and_pv':b.net_electricity_consumption_without_storage_and_pv,
                 'electrical_storage_soc':b.electrical_storage.soc,
                 'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
-                'electrical_storage_soc':b.electrical_storage.soc,
                 'reward':rewards[j].tolist(),
             })
             temp_data['time_step'] = temp_data.index
@@ -342,13 +341,18 @@ def set_reward_design_work_order(experiment):
     for building in schema['buildings']:
         schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
 
+    grid_list = []
+
     # reward definition
-    reward_design_grid = settings[experiment]['grid']
-    param_names = list(reward_design_grid.keys())
-    param_values = list(reward_design_grid.values())
-    param_values_grid = list(itertools.product(*param_values))
-    grid = pd.DataFrame(param_values_grid,columns=param_names)
-    grid['group'] = grid.index
+    for grid in settings[experiment]['grid']:
+        param_names = list(grid.keys())
+        param_values = list(grid.values())
+        param_values_grid = list(itertools.product(*param_values))
+        grid = pd.DataFrame(param_values_grid,columns=param_names)
+        grid['group'] = grid.index
+        grid_list.append(grid)
+    
+    grid = pd.concat(grid_list,ignore_index=True,sort=True)
     grid_list = []
 
     for seed in settings['seeds']:
@@ -356,7 +360,7 @@ def set_reward_design_work_order(experiment):
         grid_list.append(grid.copy())
 
     grid = pd.concat(grid_list,ignore_index=True)
-    grid = grid.sort_values(['type','seed','weight','exponent'])
+    grid = grid.sort_values(['type','seed','electricity_price_weight','electricity_price_exponent'])
     grid['buildings'] = str(train_buildings)
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
     grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
@@ -368,10 +372,11 @@ def set_reward_design_work_order(experiment):
         schema['reward_function'] = {
             'type': params['type'],
             'attributes': {
-                'electricity_price_weight': float(params['weight']),
-                'carbon_emission_weight': float(1.0 - params['weight']),
-                'electricity_price_exponent': float(params['exponent']),
-                'carbon_emission_exponent': float(params['exponent']),
+                'electricity_price_weight': float(params['electricity_price_weight']),
+                'carbon_emission_weight': float(1.0 - params['electricity_price_weight']),
+                'electricity_exponent': float(params['electricity_exponent']),
+                'electricity_price_exponent': float(params['electricity_price_exponent']),
+                'carbon_emission_exponent': float(params['carbon_emission_exponent']),
             }  
         }
         schema['agent']['attributes']['seed'] = int(params['seed'])

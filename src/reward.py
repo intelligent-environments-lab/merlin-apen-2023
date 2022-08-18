@@ -40,7 +40,23 @@ class RampingReward(RewardFunction):
 
     def calculate(self) -> List[float]:
         electricity_consumption_sum = sum(self.electricity_consumption)
-        reward = (abs(electricity_consumption_sum - self.previous_electricity_consumption_sum))**2
+        reward = (abs(electricity_consumption_sum - self.previous_electricity_consumption_sum))**self.kwargs['electricity_exponent']
         self.previous_electricity_consumption_sum = electricity_consumption_sum
         reward = np.array([-reward for _ in self.electricity_consumption], dtype=float)
+        return reward
+
+class PeakToAverageReward(RewardFunction):
+    def __init__(self, electricity_consumption: List[float] = None, **kwargs):
+        super().__init__(electricity_consumption=electricity_consumption, **kwargs)
+        self.previous_electricity_consumption = []
+
+    def calculate(self) -> List[float]:
+        self.previous_electricity_consumption.append(self.electricity_consumption)
+        self.previous_electricity_consumption = self.previous_electricity_consumption[-24:]
+        values = np.array(self.previous_electricity_consumption).clip(min=0)
+        avg = values.mean(axis=0)
+        peak = values.max(axis=0)
+        reward = -peak/avg
+        reward[np.isnan(reward)] = 0
+        reward = reward**self.kwargs['electricity_exponent']
         return reward
