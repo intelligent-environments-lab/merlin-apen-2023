@@ -11,6 +11,10 @@ import subprocess
 import sys
 import pandas as pd
 from citylearn.utilities import read_json, write_json
+from database import SQLiteDatabase
+
+TIMESTAMPS = pd.DataFrame(pd.date_range('2016-08-01 00:00:00','2017-07-31 23:00:00',freq='H'),columns=['timestamp'])
+TIMESTAMPS['time_step'] = TIMESTAMPS.index
 
 def set_result_summary(experiment,detailed=False):
     if detailed:
@@ -21,12 +25,62 @@ def set_result_summary(experiment,detailed=False):
 def set_detailed_summary(experiment):
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
-    summary_directory = kwargs['summary_directory']
+    database_directory = kwargs['database_directory']
+    misc_directory = kwargs['misc_directory']
+    database_filepath = os.path.join(database_directory,f'{experiment}.db')
+    grid_filepath = os.path.join(misc_directory,f'{experiment}_grid.csv')
+    grid = pd.read_csv(grid_filepath)
+    grid = grid.rename(columns={'group':'simulation_group'})
+    grid_column_types = []
+
+    for c in grid.columns:
+        if pd.api.types.is_numeric_dtype(grid[c]):
+            grid_column_types.append(f'{c} REAL')
+        else:
+            grid_column_types.append(f'{c} TEXT')
     filenames = [
         f for f in os.listdir(result_directory) 
         if f.endswith('pkl') and experiment in f and 'agent' not in f
     ]
-    data_list = []
+
+    if os.path.isfile(database_filepath):
+        os.remove(database_filepath)
+    else:
+        pass
+    
+    db = SQLiteDatabase(database_filepath)
+    query = f"""
+    DROP TABLE IF EXISTS grid;
+    CREATE TABLE grid (
+        {','.join(grid_column_types)},
+        PRIMARY KEY (simulation_id)
+    );
+    DROP TABLE IF EXISTS detailed_summary;
+    CREATE TABLE detailed_summary (
+        timestamp TEXT,
+        time_step INTEGER,
+        simulation_id TEXT,
+        episode INTEGER,
+        building_id INTEGER,
+        building_name TEXT,
+        net_electricity_consumption REAL,
+        net_electricity_consumption_emission REAL,
+        net_electricity_consumption_price REAL,
+        net_electricity_consumption_without_storage REAL,
+        net_electricity_consumption_emission_without_storage REAL,
+        net_electricity_consumption_price_without_storage REAL,
+        net_electricity_consumption_without_storage_and_pv REAL,
+        electrical_storage_soc REAL,
+        electrical_storage_electricity_consumption REAL,
+        reward REAL,
+        PRIMARY KEY (simulation_id, episode, time_step, building_id),
+        FOREIGN KEY (simulation_id) REFERENCES grid (simulation_id)
+            ON UPDATE CASCADE
+            ON DELETE NO ACTION
+    );
+    """
+    _ = db.query(query)
+    db.insert('grid', grid.columns, grid.values)
 
     for i, f in enumerate(filenames):
         print(f'Reading {i + 1}/{len(filenames)}')
@@ -52,16 +106,22 @@ def set_detailed_summary(experiment):
                 'reward':rewards[j].tolist(),
             })
             temp_data['time_step'] = temp_data.index
-            temp_data['experiment'] = experiment
             temp_data['simulation_id'] = simulation_id
             temp_data['episode'] = episode
             temp_data['building_id'] = j
             temp_data['building_name'] = b.name
-            data_list.append(temp_data)
-    
-    data = pd.concat(data_list,ignore_index=True)
-    filepath = os.path.join(summary_directory,f'{experiment}_detailed.csv')
-    data.to_csv(filepath,index=False)
+            temp_data = temp_data.merge(TIMESTAMPS, on='time_step', how='left')
+            temp_data['timestamp'] = temp_data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            db.insert('detailed_summary', temp_data.columns, temp_data.values)
+
+    query = """
+    CREATE INDEX IF NOT EXISTS detailed_summary_timestamp ON detailed_summary (timestamp);
+    CREATE INDEX IF NOT EXISTS detailed_summary_time_step ON detailed_summary (time_step);
+    CREATE INDEX IF NOT EXISTS detailed_summary_simulation_id ON detailed_summary (simulation_id);
+    CREATE INDEX IF NOT EXISTS detailed_summary_episode ON detailed_summary (episode);
+    CREATE INDEX IF NOT EXISTS detailed_summary_building_id ON detailed_summary (building_id);
+    """
+    db.query(query)
 
 def set_brief_summary(experiment):
     kwargs = preliminary_setup()
@@ -349,10 +409,10 @@ def set_reward_design_work_order(experiment):
         param_values = list(grid.values())
         param_values_grid = list(itertools.product(*param_values))
         grid = pd.DataFrame(param_values_grid,columns=param_names)
-        grid['group'] = grid.index
         grid_list.append(grid)
     
     grid = pd.concat(grid_list,ignore_index=True,sort=True)
+    grid['group'] = grid.index
     grid_list = []
 
     for seed in settings['seeds']:
@@ -449,6 +509,7 @@ def preliminary_setup():
     misc_directory = os.path.join(data_directory,'misc')
     result_directory = os.path.join(data_directory,'result')
     summary_directory = os.path.join(data_directory,'summary')
+    database_directory = os.path.join(data_directory,'database')
     figure_directory = os.path.join(root_directory,'figures')
 
     os.makedirs(schema_directory,exist_ok=True)
@@ -458,6 +519,7 @@ def preliminary_setup():
     os.makedirs(log_directory,exist_ok=True)
     os.makedirs(result_directory,exist_ok=True)
     os.makedirs(summary_directory,exist_ok=True)
+    os.makedirs(database_directory,exist_ok=True)
     os.makedirs(figure_directory,exist_ok=True)
 
     # general simulation settings
@@ -487,6 +549,7 @@ def preliminary_setup():
         'log_directory': log_directory,
         'result_directory': result_directory,
         'summary_directory': summary_directory,
+        'database_directory': database_directory,
         'figure_directory': figure_directory,
     }
 
