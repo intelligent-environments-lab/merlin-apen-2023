@@ -29,42 +29,41 @@ def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent
     env = CityLearnEnv(schema)
 
     if agent_filepath is None:
-        agents = env.load_agents()
+        agents = env.load_agent()
     else:
         with (open(Path(agent_filepath), 'rb')) as openfile:
             agents = pickle.load(openfile)
 
     for episode in range(env.schema['episodes']):
-        observations_list = env.reset()
+        observations = env.reset()
 
         while not env.done:
             # select actions
-            actions_list = [a.select_actions(o) for a, o in zip(agents, observations_list)]
+            actions = agents.select_actions(observations)
 
             # apply actions to env
-            next_observations_list, reward_list, _, _ = env.step(actions_list)
+            next_observations, reward, _, _ = env.step(actions)
 
             if recalculate_reward:
                 env.reward_function.kwargs['electrical_storage_soc'] = np.array([b.observations['electrical_storage_soc'] for b in env.buildings])
-                reward_list = env.reward_function.calculate()
+                reward = env.reward_function.calculate()
             else:
                 pass
 
             # update
             if not static:
-                for agent, o, a, r, n in zip(agents, observations_list, actions_list, reward_list, next_observations_list):
-                    agent.add_to_buffer(o, a, r, n, done=env.done)
+                agents.add_to_buffer(observations, actions, reward, next_observations, done=env.done)
             else:
                 pass
 
-            observations_list = [o for o in next_observations_list]
+            observations = [o for o in next_observations]
             
             # print to log
             LOGGER.debug(
                 f'Time step: {env.time_step}/{env.time_steps - 1},'\
                     f' Episode: {episode}/{env.schema["episodes"] - 1},'\
-                        f' Actions: {actions_list},'\
-                            f' Rewards: {reward_list}'
+                        f' Actions: {actions},'\
+                            f' Rewards: {reward}'
             )
 
         # save env
