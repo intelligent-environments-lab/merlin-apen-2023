@@ -120,6 +120,7 @@ def set_detailed_summary(experiment):
     CREATE INDEX IF NOT EXISTS detailed_summary_simulation_id ON detailed_summary (simulation_id);
     CREATE INDEX IF NOT EXISTS detailed_summary_episode ON detailed_summary (episode);
     CREATE INDEX IF NOT EXISTS detailed_summary_building_id ON detailed_summary (building_id);
+    CREATE INDEX IF NOT EXISTS detailed_summary_date ON detailed_summary (building_id);
     """
     db.query(query)
 
@@ -308,12 +309,6 @@ def set_rbc_validation_work_order(experiment):
     for i, params in enumerate(grid.to_records(index=False)):
         schema['agent'] = {
             'type': params['type'],
-            'attributes': settings[experiment]['attributes']
-            **{
-                'hour_index':settings['observations'].index('hour'),
-                'soc_index':settings['observations'].index('electrical_storage_soc'),
-                'net_electricity_consumption_index':settings['observations'].index('net_electricity_consumption')
-            }
         }
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
@@ -403,6 +398,8 @@ def set_reward_design_work_order(experiment):
 
     grid_list = []
 
+    schema['simulation_end_time_step'] = settings["test_end_time_step"]
+
     # reward definition
     for grid in settings[experiment]['grid']:
         param_names = list(grid.keys())
@@ -434,7 +431,6 @@ def set_reward_design_work_order(experiment):
             'attributes': {
                 'electricity_price_weight': float(params['electricity_price_weight']),
                 'carbon_emission_weight': float(1.0 - params['electricity_price_weight']),
-                'electricity_exponent': float(params['electricity_exponent']),
                 'electricity_price_exponent': float(params['electricity_price_exponent']),
                 'carbon_emission_exponent': float(params['carbon_emission_exponent']),
             }  
