@@ -16,6 +16,7 @@
         "direct_solar_irradiance_predicted_12h",
         "direct_solar_irradiance_predicted_24h",
         "carbon_intensity",
+        "net_electricity_consumption",
         "non_shiftable_load",
         "solar_generation",
         "electrical_storage_soc",
@@ -29,30 +30,14 @@
         "skx-normal": {"nodes":128, "time": "48:00:00"},
         "skx-dev": {"nodes":4, "time": "02:00:00"}
     },
-    "design_buildings": [2, 9, 12, 14, 16],
+    "design_buildings": [2, 3, 6, 7, 8, 9],
     "reward_design": {
         "tacc_queue": "skx-normal",
         "grid": [{
-            "type": ["reward.MultiplicativeReward"],
-            "electricity_price_weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
-            "electricity_price_exponent": [1, 2],
-            "carbon_emission_exponent": [1, 2]
-        },{
-            "type": ["reward.AdditiveReward"],
-            "electricity_price_weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
-            "electricity_price_exponent": [1, 2],
-            "carbon_emission_exponent": [1, 2]
-        },{
             "type": ["reward.AdditiveSolarPenaltyReward"],
             "electricity_price_weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
             "electricity_price_exponent": [1, 2],
             "carbon_emission_exponent": [1, 2]
-        },{
-            "type": ["reward.RampingReward"],
-            "electricity_exponent": [1, 2]
-        },{
-            "type": ["reward.PeakToAverageReward"],
-            "electricity_exponent": [1, 2]
         }],
         "optimal": {
             "type": "reward.AdditiveSolarPenaltyReward",
@@ -76,13 +61,7 @@
         }
     },
     "rbc_validation": {
-        "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"],
-        "attributes": {
-            "capacity": 6.4,
-            "hour_index": 1,
-            "soc_index": 11,
-            "net_electricity_consumption_index": 12
-        }
+        "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"]
     },
     "deployment_strategy_1_0": {
         "tacc_queue": "long"
@@ -97,7 +76,7 @@
         "tacc_queue": "long"
     },
     "default_agent": {
-        "type": "citylearn.agents.sac.SACBasicBatteryRBC",
+        "type": "agent.SACTOUPeakReductionFontanaRBC",
         "attributes": {
             "hidden_dimension": [
                 256,
@@ -115,7 +94,6 @@
             "action_scaling_coef": 0.5,
             "reward_scaling": 5.0,
             "update_per_time_step": 2,
-            "hour_index": 1,
             "seed": 0
         }
     },
