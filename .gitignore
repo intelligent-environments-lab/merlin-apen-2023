@@ -166,3 +166,6 @@ data/misc
 data/summary
 data/database
 job/
+
+# do not track database
+*.db
