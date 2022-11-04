@@ -58,6 +58,7 @@ def set_detailed_summary(experiment):
     DROP TABLE IF EXISTS detailed_summary;
     CREATE TABLE detailed_summary (
         timestamp TEXT,
+        date TEXT,
         time_step INTEGER,
         simulation_id TEXT,
         episode INTEGER,
@@ -111,16 +112,17 @@ def set_detailed_summary(experiment):
             temp_data['building_id'] = j
             temp_data['building_name'] = b.name
             temp_data = temp_data.merge(TIMESTAMPS, on='time_step', how='left')
+            temp_data['date'] = temp_data['timestamp'].dt.strftime('%Y-%m-%d')
             temp_data['timestamp'] = temp_data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
             db.insert('detailed_summary', temp_data.columns, temp_data.values)
 
     query = """
     CREATE INDEX IF NOT EXISTS detailed_summary_timestamp ON detailed_summary (timestamp);
+    CREATE INDEX IF NOT EXISTS detailed_summary_date ON detailed_summary (date);
     CREATE INDEX IF NOT EXISTS detailed_summary_time_step ON detailed_summary (time_step);
     CREATE INDEX IF NOT EXISTS detailed_summary_simulation_id ON detailed_summary (simulation_id);
     CREATE INDEX IF NOT EXISTS detailed_summary_episode ON detailed_summary (episode);
     CREATE INDEX IF NOT EXISTS detailed_summary_building_id ON detailed_summary (building_id);
-    CREATE INDEX IF NOT EXISTS detailed_summary_date ON detailed_summary (building_id);
     """
     db.query(query)
 
