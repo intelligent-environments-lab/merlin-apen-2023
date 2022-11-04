@@ -123,6 +123,7 @@ def set_detailed_summary(experiment):
     CREATE INDEX IF NOT EXISTS detailed_summary_simulation_id ON detailed_summary (simulation_id);
     CREATE INDEX IF NOT EXISTS detailed_summary_episode ON detailed_summary (episode);
     CREATE INDEX IF NOT EXISTS detailed_summary_building_id ON detailed_summary (building_id);
+    CREATE INDEX IF NOT EXISTS detailed_summary_building_name ON detailed_summary (building_name);
     """
     db.query(query)
 
