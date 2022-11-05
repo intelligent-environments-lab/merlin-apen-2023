@@ -32,7 +32,7 @@
     },
     "design_buildings": [2, 3, 6, 7, 8, 9],
     "reward_design": {
-        "tacc_queue": "skx-normal",
+        "tacc_queue": "normal",
         "grid": [{
             "type": ["reward.AdditiveSolarPenaltyReward"],
             "electricity_price_weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
@@ -46,7 +46,7 @@
         }
     },
     "hyperparameter_design": {
-        "tacc_queue": "skx-normal",
+        "tacc_queue": "normal",
         "grid": {
             "discount": [0.90, 0.95, 0.99],
             "tau": [0.0005, 0.005, 0.05],
