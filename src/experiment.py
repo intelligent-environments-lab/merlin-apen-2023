@@ -341,6 +341,8 @@ def set_hyperparameter_design_work_order(experiment):
     for building in schema['buildings']:
         schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
 
+    schema['simulation_end_time_step'] = settings["test_end_time_step"]
+
     # hyperparameter definition
     hyperparameter_grid = settings[experiment]['grid']
     param_names = list(hyperparameter_grid.keys())
