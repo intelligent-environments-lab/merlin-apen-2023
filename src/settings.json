@@ -82,10 +82,10 @@
                 256,
                 256
             ],
-            "discount": 0.99,
-            "tau": 0.005,
+            "discount": 0.9,
+            "tau": 0.05,
             "lr": 0.005,
-            "alpha": 0.8,
+            "alpha": 0.2,
             "batch_size": 256,
             "replay_buffer_capacity": 100000.0,
             "start_training_time_step": 3671,
