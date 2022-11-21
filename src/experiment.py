@@ -168,23 +168,32 @@ def set_brief_summary(experiment):
     filepath = os.path.join(summary_directory,f'{experiment}_brief.csv')
     data.to_csv(filepath,index=False)
 
-def run(experiment):
+def run(experiment, virtual_environment_path=None, windows_system=None):
     kwargs = preliminary_setup()
     work_order_directory = kwargs['work_order_directory']
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
+    
+
+    if virtual_environment_path is not None:    
+        if windows_system:
+            virtual_environment_command = f'"{os.path.join(virtual_environment_path, "Scripts", "Activate.ps1")}"'
+        else:
+            virtual_environment_command = f'source "{os.path.join(virtual_environment_path, "bin", "activate")}"'
+    else:
+        virtual_environment_command = 'echo "No virtual environment"'
 
     with open(work_order_filepath,mode='r') as f:
         args = f.read()
     
     args = args.strip('\n').split('\n')
-    args = [shlex.split(a) for a in args]
+    args = [shlex.split(f'{virtual_environment_command} && {a}') for a in args]
     settings = get_settings()
     max_workers = settings['max_workers'] if settings.get('max_workers',None) is not None else cpu_count()
     
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         print(f'Will use {max_workers} workers for job.')
         print(f'Pooling {len(args)} jobs to run in parallel...')
-        results = [executor.submit(subprocess.run,**{'args':a,'shell':False}) for a in args]
+        results = [executor.submit(subprocess.run,**{'args':a, 'shell':False}) for a in args]
             
         for future in concurrent.futures.as_completed(results):
             try:
@@ -254,7 +263,7 @@ def set_deployment_strategy_work_order(experiment):
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
         agent_episode = save_episode_agent[experiment]
-        command = f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}'
+        command = f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}'
         command += f' --save_episode_agent {agent_episode}' if agent_episode is not None else ''
         work_order.append(command)
 
@@ -315,7 +324,7 @@ def set_rbc_validation_work_order(experiment):
         }
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
-        work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
+        work_order.append(f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}')
 
     # write work order
     work_order.append('')
@@ -374,7 +383,7 @@ def set_hyperparameter_design_work_order(experiment):
         }
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
-        work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
+        work_order.append(f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}')
 
     # write work order and tacc job
     work_order.append('')
@@ -445,7 +454,7 @@ def set_reward_design_work_order(experiment):
         schema['agent']['attributes']['seed'] = int(params['seed'])
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
         write_json(schema_filepath, schema)
-        work_order.append(f'python {os.path.join(src_directory,"simulate.py")} {schema_filepath} {params["simulation_id"]}')
+        work_order.append(f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}')
 
     # write work order and tacc job
     work_order.append('')
@@ -562,7 +571,7 @@ def get_settings():
     settings = read_json(settings_filepath)
     return settings
 
-def set_work_order(experiment):
+def set_work_order(experiment, **kwargs):
     func = {
         'reward_design':set_reward_design_work_order,
         'hyperparameter_design':set_hyperparameter_design_work_order,
@@ -572,7 +581,7 @@ def set_work_order(experiment):
         'deployment_strategy_3_0':set_deployment_strategy_work_order,
         'deployment_strategy_3_1':set_deployment_strategy_work_order,
     }[experiment]
-    func(experiment)
+    func(experiment, **kwargs)
 
 def get_experiments():
     return [
@@ -588,6 +597,8 @@ def get_experiments():
 def main():
     parser = argparse.ArgumentParser(prog='buildsys_2022_simulate',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('experiment',choices=get_experiments(),type=str)
+    parser.add_argument('-e', '--virtual_environment_path', dest='virtual_environment_path')
+    parser.add_argument('-w', '--windows_system', action='store_true', dest='windows_system')
     subparsers = parser.add_subparsers(title='subcommands',required=True,dest='subcommands')
     
     # set work order
