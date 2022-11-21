@@ -597,8 +597,6 @@ def get_experiments():
 def main():
     parser = argparse.ArgumentParser(prog='buildsys_2022_simulate',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('experiment',choices=get_experiments(),type=str)
-    parser.add_argument('-e', '--virtual_environment_path', dest='virtual_environment_path')
-    parser.add_argument('-w', '--windows_system', action='store_true', dest='windows_system')
     subparsers = parser.add_subparsers(title='subcommands',required=True,dest='subcommands')
     
     # set work order
@@ -607,6 +605,8 @@ def main():
 
     # run work order
     subparser_run_work_order = subparsers.add_parser('run_work_order')
+    subparser_run_work_order.add_argument('-e', '--virtual_environment_path', dest='virtual_environment_path')
+    subparser_run_work_order.add_argument('-w', '--windows_system', action='store_true', dest='windows_system')
     subparser_run_work_order.set_defaults(func=run)
 
     # set result summary
