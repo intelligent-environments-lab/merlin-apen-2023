@@ -213,9 +213,9 @@ def set_deployment_strategy_work_order(experiment):
         'deployment_strategy_3_1':settings["test_end_time_step"],
     }
     episodes = {
-        'deployment_strategy_1_0':schema['episodes'] + 1,
+        'deployment_strategy_1_0':schema['episodes'],
         'deployment_strategy_2_0':1,
-        'deployment_strategy_3_0':schema['episodes'] + 1,
+        'deployment_strategy_3_0':schema['episodes'],
         'deployment_strategy_3_1':1,
     }
     deterministic_start_time_step = {
