@@ -172,7 +172,6 @@ def run(experiment, virtual_environment_path=None, windows_system=None):
     kwargs = preliminary_setup()
     work_order_directory = kwargs['work_order_directory']
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
-    
 
     if virtual_environment_path is not None:    
         if windows_system:
@@ -193,7 +192,7 @@ def run(experiment, virtual_environment_path=None, windows_system=None):
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         print(f'Will use {max_workers} workers for job.')
         print(f'Pooling {len(args)} jobs to run in parallel...')
-        results = [executor.submit(subprocess.run,**{'args':a, 'shell':False}) for a in args]
+        results = [executor.submit(subprocess.run,**{'args':a, 'shell':True}) for a in args]
             
         for future in concurrent.futures.as_completed(results):
             try:
