@@ -225,9 +225,9 @@ def set_deployment_strategy_work_order(experiment):
         'deployment_strategy_3_1':0,
     }
     save_episode_agent = {
-        'deployment_strategy_1_0':episodes[experiment] - 2,
+        'deployment_strategy_1_0':episodes[experiment] - 1,
         'deployment_strategy_2_0':None,
-        'deployment_strategy_3_0':episodes[experiment] - 2,
+        'deployment_strategy_3_0':episodes[experiment] - 1,
         'deployment_strategy_3_1':None,
     }
 
@@ -342,6 +342,7 @@ def set_hyperparameter_design_work_order(experiment):
         schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
 
     schema['simulation_end_time_step'] = settings["test_end_time_step"]
+    schema['agent']['attributes']['deterministic_start_time_step'] = (schema['simulation_end_time_step'] + 1)*(schema['episodes'] - 1)
 
     # hyperparameter definition
     hyperparameter_grid = settings[experiment]['grid']
@@ -404,6 +405,7 @@ def set_reward_design_work_order(experiment):
     grid_list = []
 
     schema['simulation_end_time_step'] = settings["test_end_time_step"]
+    schema['agent']['attributes']['deterministic_start_time_step'] = (schema['simulation_end_time_step'] + 1)*(schema['episodes'] - 1)
 
     # reward definition
     for grid in settings[experiment]['grid']:
