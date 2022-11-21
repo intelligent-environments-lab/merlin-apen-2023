@@ -71,7 +71,7 @@ def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent
             pickle.dump(env,f)
 
         # save agents
-        if save_episode_agent is not None and episode == save_episode_agent:
+        if save_episode_agent is not None and episode == save_episode_agent - 1:
             with open(os.path.join(result_directory, f'{simulation_id}_agent_episode_{int(episode)}.pkl'),'wb') as f:
                 pickle.dump(agents,f)
     else:
