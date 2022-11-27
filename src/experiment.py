@@ -1,5 +1,6 @@
 import argparse
 import concurrent.futures
+from copy import deepcopy
 import inspect
 import itertools
 import os
@@ -208,6 +209,7 @@ def set_deployment_strategy_work_order(experiment):
     misc_directory = kwargs['misc_directory']
     work_order_directory = kwargs['work_order_directory']
     tacc_directory = kwargs['tacc_directory']
+    result_directory = kwargs['result_directory']
     settings = get_settings()
 
     # 1_0 - all buildings, find optimal policy on full year data
@@ -227,16 +229,22 @@ def set_deployment_strategy_work_order(experiment):
         'deployment_strategy_3_1':1,
     }
     deterministic_start_time_step = {
-        'deployment_strategy_1_0':(simulation_end_time_step[experiment] + 1)*(episodes[experiment] - 1),
+        'deployment_strategy_1_0':(simulation_end_time_step['deployment_strategy_1_0'] + 1)*(episodes['deployment_strategy_1_0'] - 1),
         'deployment_strategy_2_0':0,
-        'deployment_strategy_3_0':(simulation_end_time_step[experiment] + 1)*(episodes[experiment] - 1),
+        'deployment_strategy_3_0':(simulation_end_time_step['deployment_strategy_3_0'] + 1)*(episodes['deployment_strategy_3_0'] - 1),
         'deployment_strategy_3_1':0,
     }
     save_episode_agent = {
-        'deployment_strategy_1_0':episodes[experiment] - 1,
+        'deployment_strategy_1_0':episodes['deployment_strategy_1_0'] - 1,
         'deployment_strategy_2_0':None,
-        'deployment_strategy_3_0':episodes[experiment] - 1,
+        'deployment_strategy_3_0':episodes['deployment_strategy_3_0'] - 1,
         'deployment_strategy_3_1':None,
+    }
+    agent_filepath_sources = {
+        'deployment_strategy_1_0':None,
+        'deployment_strategy_2_0':'deployment_strategy_1_0',
+        'deployment_strategy_3_0':None,
+        'deployment_strategy_3_1':'deployment_strategy_3_0',
     }
 
     # set optimal schema
@@ -244,10 +252,27 @@ def set_deployment_strategy_work_order(experiment):
     schema['simulation_end_time_step'] = simulation_end_time_step[experiment]
     schema['agent']['attributes']['deterministic_start_time_step'] = deterministic_start_time_step[experiment]
     schema['episodes'] = episodes[experiment]
+
+    agent_episode = save_episode_agent[experiment]
+    agent_filepath_source = agent_filepath_sources[experiment]
     
     # set grid
-    grid = pd.DataFrame({'seed':settings['seeds']})
-    grid['group'] = 0
+
+    if agent_episode is not None:
+        grid = pd.DataFrame({'seed':settings['seeds']})
+        grid['group'] = 0
+        
+    else:
+        grid = pd.DataFrame({'building':list(schema['buildings'].keys())})
+        grid['group'] = grid.index
+        grid_list = []
+        
+        for s in settings['seeds']:
+            grid['seed'] = s
+            grid_list.append(grid.copy())
+
+        grid = pd.concat(grid_list, ignore_index=True, sort=False)
+
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
     grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
 
@@ -260,10 +285,25 @@ def set_deployment_strategy_work_order(experiment):
             'seed':int(params['seed'])
         }
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
-        write_json(schema_filepath, schema)
-        agent_episode = save_episode_agent[experiment]
+
+        if agent_filepath_source is not None:
+            temp_schema = deepcopy(schema)
+
+            for b in temp_schema['buildings']:
+                temp_schema['buildings'][b] = temp_schema['buildings'][params['building']]
+
+            write_json(schema_filepath, temp_schema)
+
+        else:
+            write_json(schema_filepath, schema)
+
         command = f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}'
         command += f' --save_episode_agent {agent_episode}' if agent_episode is not None else ''
+        agent_filepath = os.path.join(
+            result_directory, 
+            f'{agent_filepath_sources[experiment]}_{params["seed"]}_agent_episode_{int(save_episode_agent[agent_filepath_source] - 1)}.pkl'
+        ) if agent_filepath_source is not None else None
+        command += f' --agent_filepath "{agent_filepath}"' if agent_filepath is not None else ''
         work_order.append(command)
 
     # write work order and tacc job
