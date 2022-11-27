@@ -61,7 +61,8 @@
         }
     },
     "rbc_validation": {
-        "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"]
+        "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"],
+        "optimal": "agent.TOUPeakReductionFontanaRBC"
     },
     "deployment_strategy_1_0": {
         "tacc_queue": "long"
