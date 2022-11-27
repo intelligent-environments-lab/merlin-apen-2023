@@ -292,12 +292,47 @@ def get_optimal_schema(schema):
     }
 
     # optimal agent
+    schema['agent']['type'] = 'agent.SAC' + settings['rbc_validation']['optimal'].split('.')[-1]
     schema['agent']['attributes'] = {
         **schema['agent']['attributes'],
         **settings['hyperparameter_design']['optimal']
     }
 
     return schema
+
+def set_rbc_reference_work_order(experiment):
+    kwargs = preliminary_setup()
+    schema = kwargs['schema']
+    schema_directory = kwargs['schema_directory']
+    src_directory = kwargs['src_directory']
+    misc_directory = kwargs['misc_directory']
+    work_order_directory = kwargs['work_order_directory']
+    settings = get_settings()
+
+    schema['simulation_end_time_step'] = settings["test_end_time_step"]
+    schema['episodes'] = 1
+    grid = pd.DataFrame({'type':[settings['rbc_validation']['optimal']]})
+    grid['simulation_group'] = grid.index
+    grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
+    grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
+    work_order = []
+
+    # update agent
+    for i, params in enumerate(grid.to_records(index=False)):
+        schema['agent'] = {
+            'type': params['type'],
+        }
+        schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
+        write_json(schema_filepath, schema)
+        work_order.append(f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}')
+
+    # write work order
+    work_order.append('')
+    work_order = '\n'.join(work_order)
+    work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
+
+    with open(work_order_filepath,'w') as f:
+        f.write(work_order)
 
 def set_rbc_validation_work_order(experiment):
     kwargs = preliminary_setup()
@@ -575,6 +610,7 @@ def set_work_order(experiment, **kwargs):
         'reward_design':set_reward_design_work_order,
         'hyperparameter_design':set_hyperparameter_design_work_order,
         'rbc_validation':set_rbc_validation_work_order,
+        'rbc_reference':set_rbc_reference_work_order,
         'deployment_strategy_1_0':set_deployment_strategy_work_order,
         'deployment_strategy_2_0':set_deployment_strategy_work_order,
         'deployment_strategy_3_0':set_deployment_strategy_work_order,
@@ -587,6 +623,7 @@ def get_experiments():
         'reward_design',
         'hyperparameter_design',
         'rbc_validation',
+        'rbc_reference',
         'deployment_strategy_1_0',
         'deployment_strategy_2_0',
         'deployment_strategy_3_0',
