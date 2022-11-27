@@ -7,6 +7,7 @@ import logging
 import sys
 import numpy as np
 from citylearn.citylearn import CityLearnEnv
+from citylearn.utilities import write_json
 from experiment import preliminary_setup
 
 LOGGER = logging.getLogger(__name__)
@@ -74,6 +75,10 @@ def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent
         if save_episode_agent is not None and episode == save_episode_agent - 1:
             with open(os.path.join(result_directory, f'{simulation_id}_agent_episode_{int(episode)}.pkl'),'wb') as f:
                 pickle.dump(agents,f)
+
+        # save actions
+        write_json(os.path.join(result_directory, f'{simulation_id}_actions_episode_{int(episode)}.json'), agents.actions)
+
     else:
         pass
 
