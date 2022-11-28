@@ -68,13 +68,16 @@
         "tacc_queue": "long"
     },
     "deployment_strategy_2_0": {
-        "tacc_queue": "long"
+        "tacc_queue": "normal"
     },
     "deployment_strategy_3_0": {
         "tacc_queue": "long"
     },
     "deployment_strategy_3_1": {
         "tacc_queue": "long"
+    },
+    "deployment_strategy_3_2": {
+        "tacc_queue": "normal"
     },
     "default_agent": {
         "type": "agent.SACTOUPeakReductionFontanaRBC",
