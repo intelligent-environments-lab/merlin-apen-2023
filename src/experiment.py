@@ -213,56 +213,74 @@ def set_deployment_strategy_work_order(experiment):
     settings = get_settings()
 
     # 1_0 - all buildings, find optimal policy on full year data
-    # 2_0 - transfer policy from best & worst in 1_0 to all other buildings for 1 episode & evaluate determinitically
+    # 2_0 - transfer policy between buildings for 1 episode & evaluate determinitically
     # 3_0 - all buildings, find optimal policy on half year data
-    # 3_1 - transfer policy from best & worst in 3_0 to all other buildings for 1 episode & evaluate determinitically
+    # 3_1 - test on remaining timesteps 1 episode & evaluate determinitically
+    # 3_2 - transfer policy between buildings for 1 episode & evaluate determinitically
+    simulation_start_time_step = {
+        'deployment_strategy_1_0':settings["train_start_time_step"], 
+        'deployment_strategy_2_0':settings["train_start_time_step"], 
+        'deployment_strategy_3_0':settings["train_start_time_step"], 
+        'deployment_strategy_3_1':settings["test_start_time_step"],
+        'deployment_strategy_3_2':settings["test_start_time_step"],
+    }
     simulation_end_time_step = {
         'deployment_strategy_1_0':settings["test_end_time_step"], 
         'deployment_strategy_2_0':settings["test_end_time_step"], 
         'deployment_strategy_3_0':settings["train_end_time_step"], 
         'deployment_strategy_3_1':settings["test_end_time_step"],
+        'deployment_strategy_3_2':settings["test_end_time_step"],
     }
     episodes = {
         'deployment_strategy_1_0':schema['episodes'],
         'deployment_strategy_2_0':1,
         'deployment_strategy_3_0':schema['episodes'],
         'deployment_strategy_3_1':1,
+        'deployment_strategy_3_2':1,
     }
     deterministic_start_time_step = {
         'deployment_strategy_1_0':(simulation_end_time_step['deployment_strategy_1_0'] + 1)*(episodes['deployment_strategy_1_0'] - 1),
         'deployment_strategy_2_0':0,
         'deployment_strategy_3_0':(simulation_end_time_step['deployment_strategy_3_0'] + 1)*(episodes['deployment_strategy_3_0'] - 1),
         'deployment_strategy_3_1':0,
+        'deployment_strategy_3_2':0,
     }
     save_episode_agent = {
         'deployment_strategy_1_0':episodes['deployment_strategy_1_0'] - 1,
         'deployment_strategy_2_0':None,
         'deployment_strategy_3_0':episodes['deployment_strategy_3_0'] - 1,
         'deployment_strategy_3_1':None,
+        'deployment_strategy_3_2':None,
     }
     agent_filepath_sources = {
         'deployment_strategy_1_0':None,
         'deployment_strategy_2_0':'deployment_strategy_1_0',
         'deployment_strategy_3_0':None,
         'deployment_strategy_3_1':'deployment_strategy_3_0',
+        'deployment_strategy_3_2':'deployment_strategy_3_0',
+    }
+    transfer_agents = {
+        'deployment_strategy_1_0':False,
+        'deployment_strategy_2_0':True,
+        'deployment_strategy_3_0':False,
+        'deployment_strategy_3_1':False,
+        'deployment_strategy_3_2':True,
     }
 
     # set optimal schema
     schema = get_optimal_schema(schema)
+    schema['simulation_start_time_step'] = simulation_start_time_step[experiment]
     schema['simulation_end_time_step'] = simulation_end_time_step[experiment]
     schema['agent']['attributes']['deterministic_start_time_step'] = deterministic_start_time_step[experiment]
     schema['episodes'] = episodes[experiment]
 
     agent_episode = save_episode_agent[experiment]
     agent_filepath_source = agent_filepath_sources[experiment]
+    transfer = transfer_agents[experiment]
     
     # set grid
-
-    if agent_episode is not None:
-        grid = pd.DataFrame({'seed':settings['seeds']})
-        grid['group'] = 0
-        
-    else:
+ 
+    if transfer:
         grid = pd.DataFrame({'building':list(schema['buildings'].keys())})
         grid['group'] = grid.index
         grid_list = []
@@ -272,6 +290,10 @@ def set_deployment_strategy_work_order(experiment):
             grid_list.append(grid.copy())
 
         grid = pd.concat(grid_list, ignore_index=True, sort=False)
+    
+    else:
+        grid = pd.DataFrame({'seed':settings['seeds']})
+        grid['group'] = 0
 
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
     grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
@@ -286,7 +308,7 @@ def set_deployment_strategy_work_order(experiment):
         }
         schema_filepath = os.path.join(schema_directory,f'{params["simulation_id"]}.json')
 
-        if agent_filepath_source is not None:
+        if transfer:
             temp_schema = deepcopy(schema)
 
             for b in temp_schema['buildings']:
@@ -658,6 +680,7 @@ def set_work_order(experiment, **kwargs):
         'deployment_strategy_2_0':set_deployment_strategy_work_order,
         'deployment_strategy_3_0':set_deployment_strategy_work_order,
         'deployment_strategy_3_1':set_deployment_strategy_work_order,
+        'deployment_strategy_3_2':set_deployment_strategy_work_order,
     }[experiment]
     func(experiment, **kwargs)
 
@@ -671,6 +694,7 @@ def get_experiments():
         'deployment_strategy_2_0',
         'deployment_strategy_3_0',
         'deployment_strategy_3_1',
+        'deployment_strategy_3_2',
     ]
 
 def main():
