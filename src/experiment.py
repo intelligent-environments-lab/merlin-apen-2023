@@ -209,7 +209,7 @@ def set_deployment_strategy_work_order(experiment):
     misc_directory = kwargs['misc_directory']
     work_order_directory = kwargs['work_order_directory']
     tacc_directory = kwargs['tacc_directory']
-    result_directory = kwargs['result_directory']
+    agent_directory = kwargs['agent_directory']
     settings = get_settings()
 
     # 1_0 - all buildings, find optimal policy on full year data
@@ -300,7 +300,7 @@ def set_deployment_strategy_work_order(experiment):
         command = f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}'
         command += f' --save_episode_agent {agent_episode}' if agent_episode is not None else ''
         agent_filepath = os.path.join(
-            result_directory, 
+            agent_directory, 
             f'{agent_filepath_sources[experiment]}_{params["seed"]}_agent_episode_{int(save_episode_agent[agent_filepath_source] - 1)}.pkl'
         ) if agent_filepath_source is not None else None
         command += f' --agent_filepath "{agent_filepath}"' if agent_filepath is not None else ''
@@ -594,6 +594,7 @@ def preliminary_setup():
     schema_directory = os.path.join(data_directory,'schema')
     misc_directory = os.path.join(data_directory,'misc')
     result_directory = os.path.join(data_directory,'result')
+    agent_directory = os.path.join(data_directory,'agent')
     summary_directory = os.path.join(data_directory,'summary')
     database_directory = os.path.join(data_directory,'database')
     figure_directory = os.path.join(root_directory,'figures')
@@ -604,6 +605,7 @@ def preliminary_setup():
     os.makedirs(tacc_directory,exist_ok=True)
     os.makedirs(log_directory,exist_ok=True)
     os.makedirs(result_directory,exist_ok=True)
+    os.makedirs(agent_directory,exist_ok=True)
     os.makedirs(summary_directory,exist_ok=True)
     os.makedirs(database_directory,exist_ok=True)
     os.makedirs(figure_directory,exist_ok=True)
@@ -637,6 +639,7 @@ def preliminary_setup():
         'summary_directory': summary_directory,
         'database_directory': database_directory,
         'figure_directory': figure_directory,
+        'agent_directory': agent_directory,
     }
 
 def get_settings():

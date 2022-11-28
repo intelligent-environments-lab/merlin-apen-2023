@@ -165,6 +165,7 @@ data/schema
 data/misc
 data/summary
 data/database
+data/agent
 job/
 
 # do not track database

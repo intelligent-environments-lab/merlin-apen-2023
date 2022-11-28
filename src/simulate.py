@@ -17,6 +17,7 @@ def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent
     # set filepaths and directories
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
+    agent_directory = kwargs['agent_directory']
     log_directory = kwargs['log_directory']
     log_filepath = os.path.join(log_directory, f'simulation_{simulation_id}.log')
 
@@ -73,7 +74,7 @@ def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent
 
         # save agents
         if save_episode_agent is not None and episode == save_episode_agent - 1:
-            with open(os.path.join(result_directory, f'{simulation_id}_agent_episode_{int(episode)}.pkl'),'wb') as f:
+            with open(os.path.join(agent_directory, f'{simulation_id}_agent_episode_{int(episode)}.pkl'),'wb') as f:
                 pickle.dump(agents,f)
 
         # save actions
