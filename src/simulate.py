@@ -13,7 +13,7 @@ from experiment import preliminary_setup
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent_filepath=None, recalculate_reward=None):
+def simulate(schema, simulation_id, deterministic=False, static=False, save_episode_agent=None, agent_filepath=None, recalculate_reward=None):
     # set filepaths and directories
     kwargs = preliminary_setup()
     result_directory = kwargs['result_directory']
@@ -30,11 +30,18 @@ def simulate(schema, simulation_id, static=False, save_episode_agent=None, agent
     # set env
     env = CityLearnEnv(schema)
 
+    # load agent
     if agent_filepath is None:
         agents = env.load_agent()
     else:
         with (open(Path(agent_filepath), 'rb')) as openfile:
             agents = pickle.load(openfile)
+
+    # make purely deterministic
+    if deterministic:
+        agents.deterministic_start_time_step = agents.time_step
+    else:
+        pass
 
     for episode in range(env.schema['episodes']):
         observations = env.reset()
@@ -88,6 +95,7 @@ def main():
     parser.add_argument('schema',type=str)
     parser.add_argument('simulation_id',type=str)
     parser.add_argument('--static',action='store_true',dest='static')
+    parser.add_argument('--deterministic',action='store_true',dest='deterministic')
     parser.add_argument('--save_episode_agent',type=int,default=None,dest='save_episode_agent')
     parser.add_argument('--agent_filepath',type=str,default=None,dest='agent_filepath')
     parser.add_argument('--recalculate_reward',action='store_true',dest='recalculate_reward')

@@ -266,6 +266,13 @@ def set_deployment_strategy_work_order(experiment):
         'deployment_strategy_3_1':False,
         'deployment_strategy_3_2':True,
     }
+    deterministic_agents = {
+        'deployment_strategy_1_0':False,
+        'deployment_strategy_2_0':True,
+        'deployment_strategy_3_0':False,
+        'deployment_strategy_3_1':True,
+        'deployment_strategy_3_2':True,
+    }
 
     # set optimal schema
     schema = get_optimal_schema(schema)
@@ -277,6 +284,7 @@ def set_deployment_strategy_work_order(experiment):
     agent_episode = save_episode_agent[experiment]
     agent_filepath_source = agent_filepath_sources[experiment]
     transfer = transfer_agents[experiment]
+    deterministic = deterministic_agents[experiment]
     
     # set grid
  
@@ -326,6 +334,7 @@ def set_deployment_strategy_work_order(experiment):
             f'{agent_filepath_sources[experiment]}_{params["seed"]}_agent_episode_{int(save_episode_agent[agent_filepath_source] - 1)}.pkl'
         ) if agent_filepath_source is not None else None
         command += f' --agent_filepath "{agent_filepath}"' if agent_filepath is not None else ''
+        command += f' --deterministic' if deterministic is not None else ''
         work_order.append(command)
 
     # write work order and tacc job
