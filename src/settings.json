@@ -67,6 +67,9 @@
     "deployment_strategy_1_0": {
         "tacc_queue": "long"
     },
+    "deployment_strategy_1_1": {
+        "tacc_queue": "long"
+    },
     "deployment_strategy_2_0": {
         "tacc_queue": "normal"
     },
