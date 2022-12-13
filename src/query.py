@@ -418,6 +418,235 @@ def get_building_average_daily_profile():
         d.building_name
     """
 
+def get_transfer_learning_district_cost_summary():
+    return f"""
+    WITH s AS (
+        SELECT
+            g.seed,
+            d.building_name,
+            d.episode,
+            d.timestamp,
+            SUM(d.net_electricity_consumption) AS net_electricity_consumption,
+            SUM(d.net_electricity_consumption_without_storage) AS net_electricity_consumption_without_storage
+        FROM detailed_summary d
+        LEFT JOIN grid g ON g.simulation_id = d.simulation_id 
+        GROUP BY
+            g.seed,
+            d.building_name,
+            d.episode,
+            d.timestamp
+    )
+
+    SELECT
+        CAST(LTRIM(d.building_name, 'Building_') AS INTEGER) AS source_building_id,
+        d.episode,
+        d.cost,
+        AVG(d.value) AS value
+    FROM (
+        SELECT
+            g.seed,
+            d.building_name,
+            d.episode,
+            'electricity_consumption' AS cost,
+            AVG(d.value) AS value
+        FROM (
+            SELECT
+                d.simulation_id,
+                d.building_name,
+                d.episode,
+                SUM(MAX(0, d.net_electricity_consumption))/SUM(MAX(0, d.net_electricity_consumption_without_storage)) AS value
+            FROM detailed_summary d
+            GROUP BY
+                d.simulation_id,
+                d.episode,
+                d.building_name
+        ) d
+        LEFT JOIN grid g ON g.simulation_id = d.simulation_id
+        GROUP BY
+            g.seed,
+            d.building_name,
+            d.episode
+
+        UNION ALL
+
+        SELECT
+            g.seed,
+            d.building_name,
+            d.episode,
+            'carbon_emission' AS cost,
+            AVG(d.value) AS value
+        FROM (
+            SELECT
+                d.simulation_id,
+                d.building_name,
+                d.episode,
+                SUM(MAX(0, d.net_electricity_consumption_emission))/SUM(MAX(0, d.net_electricity_consumption_emission_without_storage)) AS value
+            FROM detailed_summary d
+            GROUP BY
+                d.simulation_id,
+                d.episode,
+                d.building_name
+        ) d
+        LEFT JOIN grid g ON g.simulation_id = d.simulation_id
+        GROUP BY
+            g.seed,
+            d.building_name,
+            d.episode
+
+        UNION ALL
+
+        SELECT
+            g.seed,
+            d.building_name,
+            d.episode,
+            'price' AS cost,
+            AVG(d.value) AS value
+        FROM (
+            SELECT
+                d.simulation_id,
+                d.building_name,
+                d.episode,
+                SUM(MAX(0, d.net_electricity_consumption_price))/SUM(MAX(0, d.net_electricity_consumption_price_without_storage)) AS value
+            FROM detailed_summary d
+            GROUP BY
+                d.simulation_id,
+                d.episode,
+                d.building_name
+        ) d
+        LEFT JOIN grid g ON g.simulation_id = d.simulation_id
+        GROUP BY
+            g.seed,
+            d.building_name,
+            d.episode
+
+        UNION ALL
+
+        SELECT
+            t.seed,
+            t.building_name,
+            t.episode,
+            'ramping' AS cost,
+            SUM(t.with_storage_value)/SUM(without_storage_value) AS value
+        FROM (
+            SELECT
+                d.seed,
+                d.building_name,
+                d.episode,
+                ABS(d.net_electricity_consumption - LAG(d.net_electricity_consumption, 1) OVER (
+                    PARTITION BY d.seed, d.building_name, d.episode ORDER BY d.timestamp ASC
+                )) AS with_storage_value,
+                ABS(d.net_electricity_consumption_without_storage - LAG(d.net_electricity_consumption_without_storage, 1) OVER (
+                    PARTITION BY d.seed, d.building_name, d.episode ORDER BY d.timestamp ASC
+                )) AS without_storage_value
+            FROM s d
+        ) t
+        GROUP BY
+            t.seed,
+            t.building_name,
+            t.episode
+
+        UNION ALL
+
+        SELECT
+            t.seed,
+            t.building_name,
+            t.episode,
+            'daily_peak' AS cost,
+            AVG(with_storage_value)/AVG(without_storage_value) AS value
+        FROM (
+            SELECT
+                d.seed,
+                d.building_name,
+                d.episode,
+                MAX(d.net_electricity_consumption) AS with_storage_value,
+                MAX(d.net_electricity_consumption_without_storage) AS without_storage_value
+            FROM s d
+            GROUP BY
+                d.seed,
+                d.building_name,
+                d.episode,
+                DATE(d.timestamp)
+        ) t
+        GROUP BY
+            t.seed,
+            t.building_name,
+            t.episode
+
+        UNION ALL
+
+        SELECT
+            t.seed,
+            t.building_name,
+            t.episode,
+            'load_factor' AS cost,
+            AVG(with_storage_value)/AVG(without_storage_value) AS value
+        FROM (
+            SELECT
+                d.seed,
+                d.building_name,
+                d.episode,
+                1 - (AVG(d.net_electricity_consumption)/MAX(d.net_electricity_consumption)) AS with_storage_value,
+                1 - (AVG(d.net_electricity_consumption_without_storage)/MAX(d.net_electricity_consumption_without_storage)) AS without_storage_value
+            FROM s d
+            GROUP BY
+                d.seed,
+                d.building_name,
+                d.episode,
+                STRFTIME('%Y', d.timestamp),
+                STRFTIME('%m', d.timestamp)
+        ) t
+        GROUP BY
+            t.seed,
+            t.building_name,
+            t.episode
+
+        UNION ALL
+
+        SELECT
+            g.seed,
+            t.building_name,
+            t.episode,
+            'zero_net_energy' AS cost,
+            AVG(t.value) AS value
+        FROM (
+            SELECT
+                t.simulation_id,
+                t.building_name,
+                t.episode,
+                AVG(t.with_storage_value)/AVG(t.without_storage_value) AS value
+            FROM (
+                SELECT
+                    d.simulation_id,
+                    d.building_name,
+                    d.episode,
+                    d.building_name,
+                    SUM(d.net_electricity_consumption) AS with_storage_value,
+                    SUM(d.net_electricity_consumption_without_storage) AS without_storage_value
+                FROM detailed_summary d
+                GROUP BY
+                    d.simulation_id,
+                    d.episode,
+                    d.building_name,
+                    STRFTIME('%Y', d.timestamp)
+            ) t
+            GROUP BY
+                t.simulation_id,
+                t.episode,
+                t.building_name
+        ) t
+        LEFT JOIN grid g ON g.simulation_id = t.simulation_id
+        GROUP BY
+            g.seed,
+            t.building_name,
+            t.episode
+    ) d
+    GROUP BY
+        d.building_name,
+        d.episode,
+        d.cost
+    """
+
+
 def get_district_average_daily_profile():
     return """
     SELECT

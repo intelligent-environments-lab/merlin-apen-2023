@@ -186,7 +186,7 @@ def run(experiment, virtual_environment_path=None, windows_system=None):
         args = f.read()
     
     args = args.strip('\n').split('\n')
-    args = [shlex.split(f'{virtual_environment_command} && {a}') for a in args]
+    args = [f'{virtual_environment_command} && {a}' for a in args]
     settings = get_settings()
     max_workers = settings['max_workers'] if settings.get('max_workers',None) is not None else cpu_count()
     
@@ -213,12 +213,14 @@ def set_deployment_strategy_work_order(experiment):
     settings = get_settings()
 
     # 1_0 - all buildings, find optimal policy on full year data
+    # 1_1 - all buildings, find optimal policy on full year data and test on half year for comparison with 3_1
     # 2_0 - transfer policy between buildings for 1 episode & evaluate determinitically
     # 3_0 - all buildings, find optimal policy on half year data
     # 3_1 - test on remaining timesteps 1 episode & evaluate determinitically
     # 3_2 - transfer policy between buildings for 1 episode & evaluate determinitically
     simulation_start_time_step = {
         'deployment_strategy_1_0':settings["train_start_time_step"], 
+        'deployment_strategy_1_1':settings["test_start_time_step"], 
         'deployment_strategy_2_0':settings["train_start_time_step"], 
         'deployment_strategy_3_0':settings["train_start_time_step"], 
         'deployment_strategy_3_1':settings["test_start_time_step"],
@@ -226,6 +228,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     simulation_end_time_step = {
         'deployment_strategy_1_0':settings["test_end_time_step"], 
+        'deployment_strategy_1_1':settings["test_end_time_step"], 
         'deployment_strategy_2_0':settings["test_end_time_step"], 
         'deployment_strategy_3_0':settings["train_end_time_step"], 
         'deployment_strategy_3_1':settings["test_end_time_step"],
@@ -233,6 +236,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     episodes = {
         'deployment_strategy_1_0':schema['episodes'],
+        'deployment_strategy_1_1':1,
         'deployment_strategy_2_0':1,
         'deployment_strategy_3_0':schema['episodes'],
         'deployment_strategy_3_1':1,
@@ -240,6 +244,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     deterministic_start_time_step = {
         'deployment_strategy_1_0':(simulation_end_time_step['deployment_strategy_1_0'] + 1)*(episodes['deployment_strategy_1_0'] - 1),
+        'deployment_strategy_1_1':0,
         'deployment_strategy_2_0':0,
         'deployment_strategy_3_0':(simulation_end_time_step['deployment_strategy_3_0'] + 1)*(episodes['deployment_strategy_3_0'] - 1),
         'deployment_strategy_3_1':0,
@@ -247,6 +252,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     save_episode_agent = {
         'deployment_strategy_1_0':episodes['deployment_strategy_1_0'] - 1,
+        'deployment_strategy_1_1':None,
         'deployment_strategy_2_0':None,
         'deployment_strategy_3_0':episodes['deployment_strategy_3_0'] - 1,
         'deployment_strategy_3_1':None,
@@ -254,6 +260,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     agent_filepath_sources = {
         'deployment_strategy_1_0':None,
+        'deployment_strategy_1_1':'deployment_strategy_1_0',
         'deployment_strategy_2_0':'deployment_strategy_1_0',
         'deployment_strategy_3_0':None,
         'deployment_strategy_3_1':'deployment_strategy_3_0',
@@ -261,6 +268,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     transfer_agents = {
         'deployment_strategy_1_0':False,
+        'deployment_strategy_1_1':False,
         'deployment_strategy_2_0':True,
         'deployment_strategy_3_0':False,
         'deployment_strategy_3_1':False,
@@ -268,6 +276,7 @@ def set_deployment_strategy_work_order(experiment):
     }
     deterministic_agents = {
         'deployment_strategy_1_0':False,
+        'deployment_strategy_1_1':True,
         'deployment_strategy_2_0':True,
         'deployment_strategy_3_0':False,
         'deployment_strategy_3_1':True,
@@ -380,7 +389,12 @@ def set_rbc_reference_work_order(experiment):
     work_order_directory = kwargs['work_order_directory']
     settings = get_settings()
 
+    start_timestamps = {
+        'rbc_reference_1':settings["train_start_time_step"], 
+        'rbc_reference_3': settings["test_start_time_step"]
+    }
     schema['simulation_end_time_step'] = settings["test_end_time_step"]
+    schema['simulation_start_time_step'] = start_timestamps[experiment]
     schema['episodes'] = 1
     grid = pd.DataFrame({'type':[settings['rbc_validation']['optimal']]})
     grid['simulation_group'] = grid.index
@@ -684,8 +698,10 @@ def set_work_order(experiment, **kwargs):
         'reward_design':set_reward_design_work_order,
         'hyperparameter_design':set_hyperparameter_design_work_order,
         'rbc_validation':set_rbc_validation_work_order,
-        'rbc_reference':set_rbc_reference_work_order,
+        'rbc_reference_1':set_rbc_reference_work_order,
+        'rbc_reference_3':set_rbc_reference_work_order,
         'deployment_strategy_1_0':set_deployment_strategy_work_order,
+        'deployment_strategy_1_1':set_deployment_strategy_work_order,
         'deployment_strategy_2_0':set_deployment_strategy_work_order,
         'deployment_strategy_3_0':set_deployment_strategy_work_order,
         'deployment_strategy_3_1':set_deployment_strategy_work_order,
@@ -698,8 +714,10 @@ def get_experiments():
         'reward_design',
         'hyperparameter_design',
         'rbc_validation',
-        'rbc_reference',
+        'rbc_reference_1',
+        'rbc_reference_3',
         'deployment_strategy_1_0',
+        'deployment_strategy_1_1',
         'deployment_strategy_2_0',
         'deployment_strategy_3_0',
         'deployment_strategy_3_1',
