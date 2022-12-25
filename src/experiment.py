@@ -369,20 +369,20 @@ def get_optimal_schema(schema):
 
     # optimal reward
     schema['reward_function'] = {
-        'type': settings['reward_design']['optimal']['type'],
+        'type': settings['experiments']['reward_design']['optimal']['type'],
         'attributes': {
-            'electricity_price_weight': float(settings['reward_design']['optimal']['weight']),
-            'carbon_emission_weight': float(1.0 - settings['reward_design']['optimal']['weight']),
-            'electricity_price_exponent': float(settings['reward_design']['optimal']['exponent']),
-            'carbon_emission_exponent': float(settings['reward_design']['optimal']['exponent']),
+            'electricity_price_weight': float(settings['experiments']['reward_design']['optimal']['weight']),
+            'carbon_emission_weight': float(1.0 - settings['experiments']['reward_design']['optimal']['weight']),
+            'electricity_price_exponent': float(settings['experiments']['reward_design']['optimal']['exponent']),
+            'carbon_emission_exponent': float(settings['experiments']['reward_design']['optimal']['exponent']),
         } 
     }
 
     # optimal agent
-    schema['agent']['type'] = 'agent.SAC' + settings['rbc_validation']['optimal'].split('.')[-1]
+    schema['agent']['type'] = 'agent.SAC' + settings['experiments']['rbc_validation']['optimal'].split('.')[-1]
     schema['agent']['attributes'] = {
         **schema['agent']['attributes'],
-        **settings['hyperparameter_design']['optimal']
+        **settings['experiments']['hyperparameter_design']['optimal']
     }
 
     return schema
@@ -394,6 +394,7 @@ def set_rbc_reference_work_order(experiment):
     src_directory = kwargs['src_directory']
     misc_directory = kwargs['misc_directory']
     work_order_directory = kwargs['work_order_directory']
+    tacc_directory = kwargs['tacc_directory']
     settings = get_settings()
 
     start_timestamps = {
@@ -403,7 +404,7 @@ def set_rbc_reference_work_order(experiment):
     schema['simulation_end_time_step'] = settings["test_end_time_step"]
     schema['simulation_start_time_step'] = start_timestamps[experiment]
     schema['episodes'] = 1
-    grid = pd.DataFrame({'type':[settings['rbc_validation']['optimal']]})
+    grid = pd.DataFrame({'type':[settings['experiments']['rbc_validation']['optimal']]})
     grid['simulation_group'] = grid.index
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
     grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
@@ -419,12 +420,16 @@ def set_rbc_reference_work_order(experiment):
         work_order.append(f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}')
 
     # write work order
+
+    tacc_job = get_tacc_job(experiment)
+    tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
     work_order.append('')
     work_order = '\n'.join(work_order)
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
 
-    with open(work_order_filepath,'w') as f:
-        f.write(work_order)
+    for d, p in zip([work_order,tacc_job],[work_order_filepath,tacc_job_filepath]):
+        with open(p,'w') as f:
+            f.write(d)
 
 def set_rbc_validation_work_order(experiment):
     kwargs = preliminary_setup()
@@ -433,12 +438,13 @@ def set_rbc_validation_work_order(experiment):
     src_directory = kwargs['src_directory']
     misc_directory = kwargs['misc_directory']
     work_order_directory = kwargs['work_order_directory']
+    tacc_directory = kwargs['tacc_directory']
     settings = get_settings()
 
     # update general settings
     schema['simulation_end_time_step'] = settings["test_end_time_step"]
     schema['episodes'] = 1
-    grid = pd.DataFrame({'type':settings[experiment]['type']}) 
+    grid = pd.DataFrame({'type':settings['experiments'][experiment]['type']}) 
     grid['simulation_id'] = grid.reset_index().index.map(lambda x: f'{experiment}_{x}')
     grid.to_csv(os.path.join(misc_directory,f'{experiment}_grid.csv'),index=False)
     work_order = []
@@ -453,12 +459,15 @@ def set_rbc_validation_work_order(experiment):
         work_order.append(f'python "{os.path.join(src_directory,"simulate.py")}" "{schema_filepath}" {params["simulation_id"]}')
 
     # write work order
+    tacc_job = get_tacc_job(experiment)
+    tacc_job_filepath = os.path.join(tacc_directory,f'{experiment}.sh')
     work_order.append('')
     work_order = '\n'.join(work_order)
     work_order_filepath = os.path.join(work_order_directory,f'{experiment}.sh')
 
-    with open(work_order_filepath,'w') as f:
-        f.write(work_order)
+    for d, p in zip([work_order,tacc_job],[work_order_filepath,tacc_job_filepath]):
+        with open(p,'w') as f:
+            f.write(d)
 
 def set_hyperparameter_design_work_order(experiment):
     kwargs = preliminary_setup()
@@ -485,7 +494,7 @@ def set_hyperparameter_design_work_order(experiment):
     schema['agent']['attributes']['deterministic_start_time_step'] = (schema['simulation_end_time_step'] + 1)*(schema['episodes'] - 1)
 
     # hyperparameter definition
-    hyperparameter_grid = settings[experiment]['grid']
+    hyperparameter_grid = settings['experiments']['hyperparameter_design']['grid']
     param_names = list(hyperparameter_grid.keys())
     param_values = list(hyperparameter_grid.values())
     param_values_grid = list(itertools.product(*param_values))
@@ -553,7 +562,7 @@ def set_reward_design_work_order(experiment):
     schema['agent']['attributes']['deterministic_start_time_step'] = (schema['simulation_end_time_step'] + 1)*(schema['episodes'] - 1)
 
     # reward definition
-    for grid in settings[experiment]['grid']:
+    for grid in settings['experiments']['reward_design']['grid']:
         param_names = list(grid.keys())
         param_values = list(grid.values())
         param_values_grid = list(itertools.product(*param_values))
@@ -605,10 +614,10 @@ def set_reward_design_work_order(experiment):
 
 def get_tacc_job(experiment, nodes=None):
     settings = get_settings()
-    queue = settings[experiment]['tacc_queue']
-    nodes = settings['tacc_queue'][queue]['nodes'] if nodes is None else min(settings['tacc_queue'][queue]['nodes'], nodes)
+    queue = settings['tacc_queue']['active']
+    nodes = settings['tacc_queue']['metadata'][queue]['nodes'] if nodes is None else min(settings['tacc_queue']['metadata'][queue]['nodes'], nodes)
     nodes = int(nodes)
-    time = settings['tacc_queue'][queue]['time']
+    time = settings['tacc_queue']['metadata'][queue]['time']
     kwargs = preliminary_setup()
     root_directory = kwargs['root_directory']
     log_directory = kwargs['log_directory']
