@@ -25,63 +25,15 @@
         "electricity_pricing_12h"
     ],
     "tacc_queue": {
-        "normal": {"nodes":256, "time": "48:00:00"},
-        "long": {"nodes":32, "time": "120:00:00"},
-        "skx-normal": {"nodes":128, "time": "48:00:00"},
-        "skx-dev": {"nodes":4, "time": "02:00:00"}
+        "active": "normal",
+        "metadata": {
+            "normal": {"nodes":256, "time": "48:00:00"},
+            "long": {"nodes":32, "time": "120:00:00"},
+            "skx-normal": {"nodes":128, "time": "48:00:00"},
+            "skx-dev": {"nodes":4, "time": "02:00:00"}
+        }
     },
     "design_buildings": [2, 3, 6, 7, 8, 9],
-    "reward_design": {
-        "tacc_queue": "normal",
-        "grid": [{
-            "type": ["reward.AdditiveSolarPenaltyReward"],
-            "electricity_price_weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
-            "electricity_price_exponent": [1, 2],
-            "carbon_emission_exponent": [1, 2]
-        }],
-        "optimal": {
-            "type": "reward.AdditiveSolarPenaltyReward",
-            "exponent": 1,
-            "weight": 1.0
-        }
-    },
-    "hyperparameter_design": {
-        "tacc_queue": "normal",
-        "grid": {
-            "discount": [0.90, 0.95, 0.99],
-            "tau": [0.0005, 0.005, 0.05],
-            "lr": [0.00005, 0.0005, 0.005],
-            "alpha": [0.2, 0.5, 0.8]
-        },
-        "optimal": {
-            "discount": 0.9,
-            "tau": 0.05,
-            "lr": 0.005,
-            "alpha": 0.2
-        }
-    },
-    "rbc_validation": {
-        "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"],
-        "optimal": "agent.TOUPeakReductionFontanaRBC"
-    },
-    "deployment_strategy_1_0": {
-        "tacc_queue": "long"
-    },
-    "deployment_strategy_1_1": {
-        "tacc_queue": "long"
-    },
-    "deployment_strategy_2_0": {
-        "tacc_queue": "normal"
-    },
-    "deployment_strategy_3_0": {
-        "tacc_queue": "long"
-    },
-    "deployment_strategy_3_1": {
-        "tacc_queue": "normal"
-    },
-    "deployment_strategy_3_2": {
-        "tacc_queue": "normal"
-    },
     "default_agent": {
         "type": "agent.SACTOUPeakReductionFontanaRBC",
         "attributes": {
@@ -111,6 +63,48 @@
             "electricity_price_exponent": 1.0,
             "carbon_emission_weight": 0.0,
             "electricity_price_weight": 1.0
+        }
+    },
+    "experiments": {
+        "rbc_validation": {
+            "tacc_queue": "normal",
+            "type": ["agent.SelfConsumptionFontanaRBC", "agent.TOUPeakReductionFontanaRBC", "agent.TOURateOptimizationFontanaRBC"],
+            "optimal": "agent.TOUPeakReductionFontanaRBC"
+        },
+        "rbc_reference": {
+            "tacc_queue": "normal"
+        },
+        "reward_design": {
+            "tacc_queue": "normal",
+            "grid": [{
+                "type": ["reward.AdditiveSolarPenaltyReward"],
+                "electricity_price_weight": [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0],
+                "electricity_price_exponent": [1, 2],
+                "carbon_emission_exponent": [1, 2]
+            }],
+            "optimal": {
+                "type": "reward.AdditiveSolarPenaltyReward",
+                "exponent": 1,
+                "weight": 1.0
+            }
+        },
+        "hyperparameter_design": {
+            "tacc_queue": "normal",
+            "grid": {
+                "discount": [0.90, 0.95, 0.99],
+                "tau": [0.0005, 0.005, 0.05],
+                "lr": [0.00005, 0.0005, 0.005],
+                "alpha": [0.2, 0.5, 0.8]
+            },
+            "optimal": {
+                "discount": 0.9,
+                "tau": 0.05,
+                "lr": 0.005,
+                "alpha": 0.2
+            }
+        },
+        "deployment_strategy": {
+            "tacc_queue": "long"
         }
     }
 }
