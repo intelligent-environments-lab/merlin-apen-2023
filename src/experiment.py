@@ -39,10 +39,14 @@ def set_detailed_summary(experiment):
             grid_column_types.append(f'{c} REAL')
         else:
             grid_column_types.append(f'{c} TEXT')
-    filenames = [
+    filenames = sorted([
         f for f in os.listdir(result_directory) 
         if f.endswith('pkl') and experiment in f and 'agent' not in f
-    ]
+    ])
+    action_filenames = sorted([
+        f for f in os.listdir(result_directory) 
+        if f.endswith('json') and experiment in f and 'actions' in f
+    ])
 
     if os.path.isfile(database_filepath):
         os.remove(database_filepath)
@@ -74,6 +78,7 @@ def set_detailed_summary(experiment):
         net_electricity_consumption_without_storage_and_pv REAL,
         electrical_storage_soc REAL,
         electrical_storage_electricity_consumption REAL,
+        action REAL,
         reward REAL,
         PRIMARY KEY (simulation_id, episode, time_step, building_id),
         FOREIGN KEY (simulation_id) REFERENCES grid (simulation_id)
@@ -84,7 +89,7 @@ def set_detailed_summary(experiment):
     _ = db.query(query)
     db.insert('grid', grid.columns, grid.values)
 
-    for i, f in enumerate(filenames):
+    for i, (f, a) in enumerate(zip(filenames, action_filenames)):
         print(f'Reading {i + 1}/{len(filenames)}')
         episode = int(f.split('.')[0].split('_')[-1])
         simulation_id = '_'.join(f.split('_')[0:-2])
@@ -92,6 +97,7 @@ def set_detailed_summary(experiment):
         with (open(os.path.join(result_directory,f), 'rb')) as openfile:
             env = pickle.load(openfile)
 
+        actions = read_json(os.path.join(result_directory, a))
         rewards = pd.DataFrame(env.rewards)
         
         for j, b in enumerate(env.buildings):
@@ -105,6 +111,7 @@ def set_detailed_summary(experiment):
                 'net_electricity_consumption_without_storage_and_pv':b.net_electricity_consumption_without_storage_and_pv,
                 'electrical_storage_soc':b.electrical_storage.soc,
                 'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
+                'action':pd.DataFrame(actions[j])[0].tolist(),
                 'reward':rewards[j].tolist(),
             })
             temp_data['time_step'] = temp_data.index
@@ -469,7 +476,12 @@ def set_hyperparameter_design_work_order(experiment):
     for building in schema['buildings']:
         schema['buildings'][building]['include'] = True if int(building.split('_')[-1]) in train_buildings else False
 
-    schema['simulation_end_time_step'] = settings["test_end_time_step"]
+    simulation_end_time_step = {
+        'hyperparameter_design_1': settings['test_end_time_step'],
+        'hyperparameter_design_3': settings['train_end_time_step'],
+    }
+
+    schema['simulation_end_time_step'] = simulation_end_time_step[experiment]
     schema['agent']['attributes']['deterministic_start_time_step'] = (schema['simulation_end_time_step'] + 1)*(schema['episodes'] - 1)
 
     # hyperparameter definition
@@ -532,7 +544,12 @@ def set_reward_design_work_order(experiment):
 
     grid_list = []
 
-    schema['simulation_end_time_step'] = settings["test_end_time_step"]
+    simulation_end_time_step = {
+        'reward_design_1': settings['test_end_time_step'],
+        'reward_design_3': settings['train_end_time_step'],
+    }
+
+    schema['simulation_end_time_step'] = simulation_end_time_step[experiment]
     schema['agent']['attributes']['deterministic_start_time_step'] = (schema['simulation_end_time_step'] + 1)*(schema['episodes'] - 1)
 
     # reward definition
@@ -695,8 +712,10 @@ def get_settings():
 
 def set_work_order(experiment, **kwargs):
     func = {
-        'reward_design':set_reward_design_work_order,
-        'hyperparameter_design':set_hyperparameter_design_work_order,
+        'reward_design_1':set_reward_design_work_order,
+        'reward_design_3':set_reward_design_work_order,
+        'hyperparameter_design_1':set_hyperparameter_design_work_order,
+        'hyperparameter_design_3':set_hyperparameter_design_work_order,
         'rbc_validation':set_rbc_validation_work_order,
         'rbc_reference_1':set_rbc_reference_work_order,
         'rbc_reference_3':set_rbc_reference_work_order,
@@ -711,8 +730,10 @@ def set_work_order(experiment, **kwargs):
 
 def get_experiments():
     return [
-        'reward_design',
-        'hyperparameter_design',
+        'reward_design_1',
+        'reward_design_3',
+        'hyperparameter_design_1',
+        'hyperparameter_design_3',
         'rbc_validation',
         'rbc_reference_1',
         'rbc_reference_3',
