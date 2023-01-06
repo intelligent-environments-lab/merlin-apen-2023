@@ -83,12 +83,12 @@ def simulate(schema, simulation_id, deterministic=False, static=False, save_epis
         if save_episode_agent is not None and episode == save_episode_agent - 1:
             with open(os.path.join(agent_directory, f'{simulation_id}_agent_episode_{int(episode)}.pkl'),'wb') as f:
                 pickle.dump(agents,f)
+        else:
+            pass
 
         # save actions
         write_json(os.path.join(result_directory, f'{simulation_id}_actions_episode_{int(episode)}.json'), agents.actions)
-
-    else:
-        pass
+    
 
 def main():
     parser = argparse.ArgumentParser(prog='buildsys_2022_simulate',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
