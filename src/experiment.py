@@ -42,7 +42,6 @@ def set_detailed_summary(experiment):
         f for f in os.listdir(result_directory) 
         if f.endswith('pkl') and experiment in f and 'agent' not in f
     ])
-    action_filepath = os.path.join(result_directory, f'{simulation_id}_actions.json')
 
     if os.path.isfile(database_filepath):
         os.remove(database_filepath)
@@ -89,6 +88,7 @@ def set_detailed_summary(experiment):
         print(f'Reading {i + 1}/{len(filenames)}')
         episode = int(f.split('.')[0].split('_')[-1])
         simulation_id = '_'.join(f.split('_')[0:-2])
+        action_filepath = os.path.join(result_directory, f'{simulation_id}_actions.json')
             
         with (open(os.path.join(result_directory,f), 'rb')) as openfile:
             env = pickle.load(openfile)
