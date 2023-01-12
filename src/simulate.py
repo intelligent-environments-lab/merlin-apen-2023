@@ -87,7 +87,7 @@ def simulate(schema, simulation_id, deterministic=False, static=False, save_epis
             pass
 
         # save actions
-        write_json(os.path.join(result_directory, f'{simulation_id}_actions_episode_{int(episode)}.json'), agents.actions)
+        write_json(os.path.join(result_directory, f'{simulation_id}_actions.json'), agents.actions)
     
 
 def main():
