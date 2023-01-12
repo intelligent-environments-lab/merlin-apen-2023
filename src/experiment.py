@@ -42,10 +42,7 @@ def set_detailed_summary(experiment):
         f for f in os.listdir(result_directory) 
         if f.endswith('pkl') and experiment in f and 'agent' not in f
     ])
-    action_filenames = sorted([
-        f for f in os.listdir(result_directory) 
-        if f.endswith('json') and experiment in f and 'actions' in f
-    ])
+    action_filepath = os.path.join(result_directory, f'{simulation_id}_actions.json')
 
     if os.path.isfile(database_filepath):
         os.remove(database_filepath)
@@ -88,7 +85,7 @@ def set_detailed_summary(experiment):
     _ = db.query(query)
     db.insert('grid', grid.columns, grid.values)
 
-    for i, (f, a) in enumerate(zip(filenames, action_filenames)):
+    for i, f in enumerate(filenames):
         print(f'Reading {i + 1}/{len(filenames)}')
         episode = int(f.split('.')[0].split('_')[-1])
         simulation_id = '_'.join(f.split('_')[0:-2])
@@ -96,8 +93,10 @@ def set_detailed_summary(experiment):
         with (open(os.path.join(result_directory,f), 'rb')) as openfile:
             env = pickle.load(openfile)
 
-        actions = read_json(os.path.join(result_directory, a))
+        actions = read_json(action_filepath)
         rewards = pd.DataFrame(env.rewards)
+        action_start_ix = 0 if episode == 0 else action_end_ix - 1
+        action_end_ix = action_start_ix + rewards.shape[0]
         
         for j, b in enumerate(env.buildings):
             temp_data = pd.DataFrame({
@@ -110,7 +109,7 @@ def set_detailed_summary(experiment):
                 'net_electricity_consumption_without_storage_and_pv':b.net_electricity_consumption_without_storage_and_pv,
                 'electrical_storage_soc':b.electrical_storage.soc,
                 'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
-                'action':pd.DataFrame(actions[j])[0].tolist(),
+                'action':pd.DataFrame(actions[j])[0].tolist()[action_start_ix:action_end_ix],
                 'reward':rewards[j].tolist(),
             })
             temp_data['time_step'] = temp_data.index
