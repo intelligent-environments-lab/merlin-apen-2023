@@ -162,7 +162,8 @@ cython_debug/
 data/archive
 data/result
 data/schema
-data/misc
+data/misc/*
+!data/misc/battery_electricity_consumption.csv
 data/summary
 data/database
 data/agent
