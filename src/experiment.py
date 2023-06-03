@@ -7,14 +7,18 @@ import os
 from multiprocessing import cpu_count
 from pathlib import Path
 import pickle
+import shutil
 import subprocess
 import sys
 import pandas as pd
+from citylearn.data import DataSet
 from citylearn.utilities import read_json, write_json
 from database import SQLiteDatabase
 
 TIMESTAMPS = pd.DataFrame(pd.date_range('2016-08-01 00:00:00','2017-07-31 23:00:00',freq='H'),columns=['timestamp'])
 TIMESTAMPS['time_step'] = TIMESTAMPS.index
+ROOT_DIRECTORY = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts[0:-1])
+DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY,'data')
 
 def set_result_summary(experiment,detailed=False):
     if detailed:
@@ -649,24 +653,23 @@ def get_tacc_job(experiment, nodes=None):
     ])
 
 def preliminary_setup():
-    # set filepaths and directories
-    root_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts[0:-1])
+    settings = get_settings()
 
-    src_directory = os.path.join(root_directory,'src')
-    job_directory = os.path.join(root_directory,'job')
-    log_directory = os.path.join(root_directory,'log')
-    data_directory = os.path.join(root_directory,'data')
+    # set filepaths and directories
+    src_directory = os.path.join(ROOT_DIRECTORY,'src')
+    job_directory = os.path.join(ROOT_DIRECTORY,'job')
+    log_directory = os.path.join(ROOT_DIRECTORY,'log')
 
     tacc_directory = os.path.join(job_directory,'tacc')
     work_order_directory = os.path.join(job_directory,'work_order')
-    data_set_directory = os.path.join(data_directory,'citylearn_challenge_2022_phase_3')
-    schema_directory = os.path.join(data_directory,'schema')
-    misc_directory = os.path.join(data_directory,'misc')
-    result_directory = os.path.join(data_directory,'result')
-    agent_directory = os.path.join(data_directory,'agent')
-    summary_directory = os.path.join(data_directory,'summary')
-    database_directory = os.path.join(data_directory,'database')
-    figure_directory = os.path.join(root_directory,'figures')
+    data_set_directory = os.path.join(DATA_DIRECTORY,settings['dataset_name'])
+    schema_directory = os.path.join(DATA_DIRECTORY,'schema')
+    misc_directory = os.path.join(DATA_DIRECTORY,'misc')
+    result_directory = os.path.join(DATA_DIRECTORY,'result')
+    agent_directory = os.path.join(DATA_DIRECTORY,'agent')
+    summary_directory = os.path.join(DATA_DIRECTORY,'summary')
+    database_directory = os.path.join(DATA_DIRECTORY,'database')
+    figure_directory = os.path.join(ROOT_DIRECTORY,'figures')
 
     os.makedirs(schema_directory,exist_ok=True)
     os.makedirs(work_order_directory,exist_ok=True)
@@ -680,7 +683,6 @@ def preliminary_setup():
     os.makedirs(figure_directory,exist_ok=True)
 
     # general simulation settings
-    settings = get_settings()
     schema = read_json(os.path.join(data_set_directory,'schema.json'))
     schema['simulation_start_time_step'] = settings["train_start_time_step"]
     schema['simulation_end_time_step'] = settings["train_end_time_step"]
@@ -697,7 +699,7 @@ def preliminary_setup():
 
     return {
         'schema': schema, 
-        'root_directory': root_directory, 
+        'root_directory': ROOT_DIRECTORY, 
         'src_directory': src_directory, 
         'schema_directory': schema_directory, 
         'work_order_directory': work_order_directory, 
@@ -711,13 +713,8 @@ def preliminary_setup():
         'agent_directory': agent_directory,
     }
 
-def get_settings():
-    src_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts)
-    settings_filepath = os.path.join(src_directory,'settings.json')
-    settings = read_json(settings_filepath)
-    return settings
-
 def set_work_order(experiment, **kwargs):
+    set_dataset()
     func = {
         'reward_design_1':set_reward_design_work_order,
         'reward_design_3':set_reward_design_work_order,
@@ -751,6 +748,24 @@ def get_experiments():
         'deployment_strategy_3_1',
         'deployment_strategy_3_2',
     ]
+
+def set_dataset():
+    settings = get_settings()
+    dataset_name = settings['dataset_name']
+    destination_directory = os.path.join(DATA_DIRECTORY, dataset_name)
+
+    if os.path.isdir(destination_directory):
+        shutil.rmtree(destination_directory)
+    else:
+        pass
+
+    DataSet.copy(dataset_name, destination_directory=DATA_DIRECTORY)
+
+def get_settings():
+    src_directory = os.path.join(*Path(os.path.dirname(__file__)).absolute().parts)
+    settings_filepath = os.path.join(src_directory,'settings.json')
+    settings = read_json(settings_filepath)
+    return settings
 
 def main():
     parser = argparse.ArgumentParser(prog='buildsys_2022_simulate',formatter_class=argparse.ArgumentDefaultsHelpFormatter)

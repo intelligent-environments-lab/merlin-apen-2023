@@ -1,4 +1,5 @@
-{
+{   
+    "dataset_name": "citylearn_challenge_2022_phase_all",
     "tacc_directory": "/work/07083/ken658/projects/citylearn/buildsys_2022/",
     "max_workers": 5,
     "train_episodes": 11,
