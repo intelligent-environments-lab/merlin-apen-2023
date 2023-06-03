@@ -51,7 +51,7 @@ python src/experiment.py deployment_strategy_3_1 set_work_order
 python src/experiment.py deployment_strategy_3_1 run_work_order
 python src/experiment.py deployment_strategy_3_1 set_result_summary -d
 
-# Deployment strategy 3.1
+# Deployment strategy 3.2
 python src/experiment.py deployment_strategy_3_2 set_work_order
 python src/experiment.py deployment_strategy_3_2 run_work_order
 python src/experiment.py deployment_strategy_3_2 set_result_summary -d
