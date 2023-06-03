@@ -159,6 +159,7 @@ cython_debug/
 .DS_Store
 
 # do not track saved models
+data/citylearn_challenge_2022_*
 data/archive
 data/result
 data/schema
