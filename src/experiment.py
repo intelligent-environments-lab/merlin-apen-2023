@@ -87,20 +87,17 @@ def set_detailed_summary(experiment):
     """
     _ = db.query(query)
     db.insert('grid', grid.columns, grid.values)
+    actions = get_actions_from_log(experiment)
 
     for i, f in enumerate(filenames):
         print(f'Reading {i + 1}/{len(filenames)}')
         episode = int(f.split('.')[0].split('_')[-1])
         simulation_id = '_'.join(f.split('_')[0:-2])
-        action_filepath = os.path.join(result_directory, f'{simulation_id}_actions.json')
             
         with (open(os.path.join(result_directory,f), 'rb')) as openfile:
             env = pickle.load(openfile)
 
-        actions = read_json(action_filepath)
         rewards = pd.DataFrame(env.rewards)
-        action_start_ix = 0 if episode == 0 else action_end_ix - 1
-        action_end_ix = action_start_ix + rewards.shape[0]
         
         for j, b in enumerate(env.buildings):
             temp_data = pd.DataFrame({
@@ -113,7 +110,6 @@ def set_detailed_summary(experiment):
                 'net_electricity_consumption_without_storage_and_pv':b.net_electricity_consumption_without_storage_and_pv,
                 'electrical_storage_soc':b.electrical_storage.soc,
                 'electrical_storage_electricity_consumption':b.electrical_storage.electricity_consumption,
-                'action':pd.DataFrame(actions[j])[0].tolist()[action_start_ix:action_end_ix],
                 'reward':rewards[j].tolist(),
             })
             temp_data['time_step'] = temp_data.index
@@ -124,6 +120,7 @@ def set_detailed_summary(experiment):
             temp_data = temp_data.merge(TIMESTAMPS, on='time_step', how='left')
             temp_data['date'] = temp_data['timestamp'].dt.strftime('%Y-%m-%d')
             temp_data['timestamp'] = temp_data['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            temp_data = temp_data.merge(actions, on=['time_step', 'episode', 'simulation_id', 'building_id'], how='left')
             db.insert('detailed_summary', temp_data.columns, temp_data.values)
 
     query = """
@@ -136,6 +133,36 @@ def set_detailed_summary(experiment):
     CREATE INDEX IF NOT EXISTS detailed_summary_building_name ON detailed_summary (building_name);
     """
     db.query(query)
+
+def get_actions_from_log(experiment):
+    kwargs = preliminary_setup()
+    directory = kwargs['log_directory']
+    files = [f for f in os.listdir(directory) if experiment in f]
+    data_list = []
+
+    for f in files:
+        with open(os.path.join(directory, f), 'r') as d:
+            data = d.read()
+        
+        data = data.replace('\n',' ')
+        data = data.replace('\r',' ')
+        data = data.split(': Time step: ')[1:]
+        data = [{
+            'time_step': int(d.split('/')[0]),
+            'episode': int(d.split('/')[1].split(' ')[-1]),
+            'action': d.split('Actions: ')[1].split(', Rewards')[0].replace('[', '').replace(']', '').split(', ')
+        } for d in data]
+        buildings = [i for i in range(len(data[0]['action']))]*len(data)
+        data = pd.DataFrame(data)
+        data['simulation_id'] = f.strip('simulation_').split('.')[0]
+        data = data.explode(column='action')
+        data['action'] = data['action'].astype(float)
+        data['building_id'] = buildings
+        data_list.append(data)
+
+    data = pd.concat(data_list, ignore_index=True, sort=False)
+    
+    return data
 
 def set_brief_summary(experiment):
     kwargs = preliminary_setup()
