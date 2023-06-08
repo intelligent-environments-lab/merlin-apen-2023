@@ -252,7 +252,6 @@ Finally, run the [deployment_strategy_3_2.ipynb](analysis/deployment_strategy_3_
 	url = {https://www.sciencedirect.com/science/article/pii/S0306261923006876},
 	doi = {10.1016/j.apenergy.2023.121323},
 	language = {en},
-	urldate = {2023-06-08},
 	journal = {Applied Energy},
 	author = {Nweye, Kingsley and Sankaranarayanan, Siva and Nagy, Zoltan},
 	month = sep,
