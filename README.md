@@ -1,8 +1,8 @@
 # MERLIN APEN 2023
 
-![Methodology overview](figures/graphical_abstract.jpg)
+![Methodology overview](https://www.sciencedirect.com/science/article/pii/S0306261923006876)
 
-This repository provides the source-code to reproduce the [MERLIN: Multi-agent offline and transfer learning for occupant-centric operation of grid-interactive communities](https://arxiv.org/abs/2301.01148) paper. Refer to the paper for detailed explanations of the experiments desribed here as well as the general scope of this work.
+This repository provides the source-code to reproduce the [MERLIN: Multi-agent offline and transfer learning for occupant-centric operation of grid-interactive communities](https://www.sciencedirect.com/science/article/pii/S0306261923006876) paper. Refer to the paper for detailed explanations of the experiments desribed here as well as the general scope of this work.
 
 ## TL;DR
 
@@ -243,15 +243,18 @@ Finally, run the [deployment_strategy_3_2.ipynb](analysis/deployment_strategy_3_
 
 ## Citation
 
-```bib
-@misc{nweyeMERLINMultiagentOffline2023,
-	title = {{MERLIN}: {Multi}-agent offline and transfer learning for occupant-centric energy flexible operation of grid-interactive communities using smart meter data and {CityLearn}},
-	copyright = {Creative Commons Attribution 4.0 International},
-	url = {https://arxiv.org/abs/2301.01148},
-	publisher = {arXiv},
-	author = {Nweye, Kingsley and Sankaranarayanan, Siva and Nagy, Zoltan},
+```bibtex
+@article{NWEYE2023121323,
+	title = {MERLIN: Multi-agent offline and transfer learning for occupant-centric operation of grid-interactive communities},
+	journal = {Applied Energy},
+	volume = {346},
+	pages = {121323},
 	year = {2023},
-	doi = {10.48550/ARXIV.2301.01148},
-	keywords = {Artificial Intelligence (cs.AI), electronic engineering, FOS: Computer and information sciences, FOS: Electrical engineering, information engineering, Machine Learning (cs.LG), Systems and Control (eess.SY)},
+	issn = {0306-2619},
+	doi = {https://doi.org/10.1016/j.apenergy.2023.121323},
+	url = {https://www.sciencedirect.com/science/article/pii/S0306261923006876},
+	author = {Kingsley Nweye and Siva Sankaranarayanan and Zoltan Nagy},
+	keywords = {Energy flexibility, Smart meter, Sustainability, Electrification, Building energy management, Demand response, Distributed energy resources, Energy simulation, Machine learning},
+	abstract = {Building and power generation decarbonization present new challenges in electric grid reliability as a result of renewable energy source intermittency and increase in grid load caused by end-use electrification. To restore reliability, grid-interactive efficient buildings can provide grid flexibility services through demand response. Reinforcement learning is well-suited for energy management in grid-interactive efficient buildings as it is able to adapt to unique building characteristics compared to rule-based control and model predictive control. Yet, factors hindering the adoption of reinforcement learning in real-world applications include its sample inefficiency during training, control security and generalizability. Here we address these challenges by proposing the MERLIN framework for the training, evaluation, deployment and transfer of control policies for distributed energy resources in grid-interactive communities for different levels of data availability. We utilize a real-world community smart meter dataset to show that while independently trained battery control policies can learn unique occupant behavior and provide up to 60\% performance improvement at the district level, transfer learning provides comparable building and district level performance while reducing training costs.}
 }
 ```
