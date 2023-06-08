@@ -245,14 +245,18 @@ Finally, run the [deployment_strategy_3_2.ipynb](analysis/deployment_strategy_3_
 
 ```bibtex
 @article{NWEYE2023121323,
-	title = {MERLIN: Multi-agent offline and transfer learning for occupant-centric operation of grid-interactive communities},
-	journal = {Applied Energy},
+	title = {{MERLIN}: {Multi}-agent offline and transfer learning for occupant-centric operation of grid-interactive communities},
 	volume = {346},
-	pages = {121323},
-	year = {2023},
 	issn = {0306-2619},
-	doi = {https://doi.org/10.1016/j.apenergy.2023.121323},
+	shorttitle = {{MERLIN}},
 	url = {https://www.sciencedirect.com/science/article/pii/S0306261923006876},
-	author = {Kingsley Nweye and Siva Sankaranarayanan and Zoltan Nagy},
+	doi = {10.1016/j.apenergy.2023.121323},
+	language = {en},
+	urldate = {2023-06-08},
+	journal = {Applied Energy},
+	author = {Nweye, Kingsley and Sankaranarayanan, Siva and Nagy, Zoltan},
+	month = sep,
+	year = {2023},
+	pages = {121323},
 }
 ```
